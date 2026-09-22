@@ -1,0 +1,28 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+artifacts/
+cache/
+typechain-types/
+coverage/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Private commercial facts. Invoice bodies, names, and bank details stay here.
+data/private/
+
+# Harness run output
+.harness/runs/
+
+# Local planning documents. These are not part of the published tree.
+IMPLEMENTATION.md
+task.md
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
