@@ -1,0 +1,60 @@
+{
+  "name": "claimstate",
+  "description": "Privacy-preserving obligation state envelope and one in-network operational reservation on Hedera.",
+  "version": "0.1.0",
+  "create-scaffold-hbar": {
+    "requirements": {
+      "node": ">=20.18.3"
+    },
+    "capabilities": {
+      "frontend": ["nextjs-app"],
+      "solidityFramework": ["hardhat"],
+      "packageManager": ["npm"]
+    },
+    "defaults": {
+      "frontend": "nextjs-app",
+      "solidityFramework": "hardhat",
+      "packageManager": "npm"
+    },
+    "envVars": [
+      {
+        "key": "HEDERA_OPERATOR_ID",
+        "description": "Hedera testnet operator account id in 0.0.x form. Not a secret."
+      },
+      {
+        "key": "HEDERA_OPERATOR_ECDSA_KEY",
+        "description": "Hex-encoded 32-byte ECDSA private key for the operator. Leave empty in the example. Store the real key only in .env.local."
+      },
+      {
+        "key": "HEDERA_CHAIN_ID",
+        "description": "EVM chain id. This template accepts 296 (Hedera testnet) only."
+      },
+      {
+        "key": "HEDERA_RPC_URL",
+        "description": "Hedera JSON-RPC URL. Public Hashio is for development only. Default https://testnet.hashio.io/api."
+      },
+      {
+        "key": "HEDERA_MIRROR_BASE_URL",
+        "description": "Mirror Node REST base URL. Testnet default https://testnet.mirrornode.hedera.com."
+      }
+    ],
+    "outro": {
+      "installCommand": "npm install",
+      "sections": [
+        {
+          "title": "Next steps",
+          "steps": [
+            {
+              "label": "Configure the operator",
+              "text": "Copy .env.example to .env.local. Set the Hedera testnet operator id and ECDSA key there. Do not commit .env.local."
+            },
+            {
+              "label": "Compile",
+              "command": "{run:compile}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
