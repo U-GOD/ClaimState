@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://claimstate.local/schemas/event.schema.json",
+  "title": "ClaimStateEvent",
+  "description": "Lifecycle events accepted by the ClaimState state machine. The eventType enum is closed. No other event type is valid.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventType"],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "Create",
+        "Acknowledge",
+        "Activate",
+        "CreditNote",
+        "OpenDispute",
+        "CureDispute",
+        "AllocatePayment",
+        "MarkDelinquent",
+        "DeclareDefault",
+        "Release"
+      ]
+    }
+  }
+}
