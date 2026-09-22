@@ -10,7 +10,8 @@
     "packages/*"
   ],
   "scripts": {
-    "compile": "npm run compile --workspace=@claimstate/hardhat"
+    "compile": "npm run compile --workspace=@claimstate/hardhat",
+    "test": "npm run test --workspace=@claimstate/sdk"
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.88.0"
