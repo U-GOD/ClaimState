@@ -13,7 +13,10 @@
     "compile": "npm run compile --workspace=@claimstate/hardhat",
     "test": "npm run test --workspace=@claimstate/sdk && npm run test --workspace=@claimstate/hardhat",
     "deploy:testnet": "npm run deploy:testnet --workspace=@claimstate/hardhat",
-    "smoke:acknowledge": "npm run smoke:acknowledge --workspace=@claimstate/hardhat"
+    "smoke:acknowledge": "npm run smoke:acknowledge --workspace=@claimstate/hardhat",
+    "demo:obligation": "npm run demo:obligation --workspace=@claimstate/hardhat",
+    "verify:mirror": "npm run verify:mirror --workspace=@claimstate/hardhat",
+    "verify:activation": "npm run verify:activation --workspace=@claimstate/hardhat"
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.88.0"
