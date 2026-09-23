@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { defineConfig } from "hardhat/config";
 import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import { rawEcdsaKey } from "./operator-key.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -24,7 +25,7 @@ function operatorAccounts(): string[] {
   if (!raw) {
     return [];
   }
-  return [raw.startsWith("0x") ? raw : `0x${raw}`];
+  return [rawEcdsaKey(raw)];
 }
 
 export default defineConfig({
@@ -32,6 +33,7 @@ export default defineConfig({
   solidity: {
     version: "0.8.28",
     settings: {
+      viaIR: true,
       optimizer: {
         enabled: true,
         runs: 200,
@@ -39,7 +41,18 @@ export default defineConfig({
       evmVersion: "cancun",
     },
   },
+  chainDescriptors: {
+    [TESTNET_CHAIN_ID]: {
+      name: "Hedera testnet",
+      chainType: "l1",
+    },
+  },
   networks: {
+    default: {
+      type: "edr-simulated",
+      chainId: TESTNET_CHAIN_ID,
+      chainType: "l1",
+    },
     hederaTestnet: {
       type: "http",
       chainId: TESTNET_CHAIN_ID,
