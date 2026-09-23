@@ -40,6 +40,28 @@ export {
 } from "./events.js";
 export { hmacFingerprintProvider, type FingerprintProvider } from "./fingerprint.js";
 export {
+  ADVANCE_TOKEN_UNITS,
+  BatchTooLargeError,
+  MAX_OUTER_BATCH_BYTES,
+  TREASURY_SUPPLY_UNITS,
+  TUSDC_DECIMALS,
+  buildActivationBatch,
+  type ActivationBatch,
+  type ActivationBatchInput,
+} from "./batch-builder.js";
+export {
+  ACTOR_ROLE,
+  EVIDENCE_HEADER_BYTES,
+  EVIDENCE_HOLDER_LENGTH,
+  EVIDENCE_HOLDER_OFFSET,
+  decodeEvidenceHeader,
+  encodeEvidenceHeader,
+  holderIsUndisclosed,
+  type ActorRoleName,
+  type EvidenceHeader,
+  type EvidenceHeaderInput,
+} from "./evidence.js";
+export {
   OBLIGATION_STATES,
   STATE_CODE,
   ZERO_ADDRESS,
