@@ -4,7 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "hardhat build"
+    "compile": "hardhat build",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network hederaTestnet",
+    "smoke:acknowledge": "hardhat run scripts/smoke-acknowledge.ts --network hederaTestnet"
+  },
+  "dependencies": {
+    "@claimstate/sdk": "0.1.0",
+    "@hiero-ledger/sdk": "2.88.0",
+    "@openzeppelin/contracts": "5.6.1"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "3.0.7",
