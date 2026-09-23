@@ -1,14 +1,19 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import {
-  Client,
-  Hbar,
-  TopicCreateTransaction,
-} from "@hiero-ledger/sdk";
+import { AccountCreateTransaction, Hbar, PrivateKey, TokenAssociateTransaction, TokenCreateTransaction, TopicCreateTransaction } from "@hiero-ledger/sdk";
+import type { Client } from "@hiero-ledger/sdk";
 import { Wallet } from "ethers";
 import { network } from "hardhat";
-import { operatorPrivateKey } from "../operator-key.js";
+import { TREASURY_SUPPLY_UNITS, TUSDC_DECIMALS, ADVANCE_TOKEN_UNITS } from "@claimstate/sdk";
+import {
+  demoAccountsPath,
+  manifestPath,
+  mirrorBase,
+  operatorClient,
+  requireOperatorEnv,
+  writeJson,
+  delay,
+  type DemoAccount,
+  type DemoAccounts,
+} from "./session.js";
 
 const MIRROR_WAIT_MS = 90_000;
 const MIRROR_POLL_MS = 3_000;
@@ -16,31 +21,33 @@ const MIRROR_POLL_MS = 3_000;
 await deploy();
 
 async function deploy(): Promise<void> {
-  const operatorId = process.env.HEDERA_OPERATOR_ID?.trim() ?? "";
-  const encodedKey = process.env.HEDERA_OPERATOR_ECDSA_KEY?.trim() ?? "";
-  if (operatorId.length === 0 || encodedKey.length === 0) {
-    throw new Error(
-      "A funded testnet deploy needs HEDERA_OPERATOR_ID and HEDERA_OPERATOR_ECDSA_KEY. Neither is set.",
-    );
-  }
-
-  const privateKey = operatorPrivateKey(encodedKey);
-  const raw = privateKey.toStringRaw();
-  const kernelAddress = new Wallet(raw.startsWith("0x") ? raw : `0x${raw}`).address;
-  const client = Client.forTestnet();
-  client.setOperator(operatorId, privateKey);
-  client.setDefaultMaxTransactionFee(new Hbar(2));
-
+  const { privateKey } = requireOperatorEnv();
+  const kernelAddress = new Wallet(rawHex(privateKey)).address;
+  const client = operatorClient();
   try {
+    const factorKey = PrivateKey.generateECDSA();
+    const supplierKey = PrivateKey.generateECDSA();
+    const buyerKey = PrivateKey.generateECDSA();
+    const factor = await createAccount(client, factorKey, 30);
+    const supplier = await createAccount(client, supplierKey, 5);
+    const buyer = await createAccount(client, buyerKey, 5);
+    console.log(`factorAccountId: ${factor.accountId}`);
+    console.log(`supplierAccountId: ${supplier.accountId}`);
+    console.log(`buyerAccountId: ${buyer.accountId}`);
+
     const topicResponse = await new TopicCreateTransaction()
       .setTopicMemo("ClaimState/v1")
       .setSubmitKey(privateKey.publicKey)
+      .setMaxTransactionFee(new Hbar(2))
       .execute(client);
-    const topicReceipt = await topicResponse.getReceipt(client);
-    const topicId = topicReceipt.topicId?.toString();
+    const topicId = (await topicResponse.getReceipt(client)).topicId?.toString();
     if (topicId === undefined) {
       throw new Error("Topic creation receipt did not include a topic id");
     }
+
+    const tokenId = await createToken(client, factor.accountId, factorKey);
+    await associateSupplier(client, supplier.accountId, supplierKey, tokenId);
+    console.log(`tokenId: ${tokenId}`);
 
     const { ethers } = await network.create("hederaTestnet");
     const kernel = await ethers.deployContract(
@@ -55,37 +62,116 @@ async function deploy(): Promise<void> {
 
     const contractId = await contractIdFromMirror(contractEvmAddress);
     console.log(`contractId: ${contractId}`);
+    console.log(`advanceUnits: ${ADVANCE_TOKEN_UNITS.toString()}`);
 
-    const manifest = {
+    const accounts: DemoAccounts = {
+      fingerprintKey: randomHex(32),
+      amountSalt: randomHex(32),
+      factor,
+      supplier,
+      buyer,
+    };
+    await writeJson(demoAccountsPath, accounts);
+    await writeJson(manifestPath, {
       network: "hedera-testnet",
       chainId: 296,
       topicId,
       contractId,
       contractEvmAddress,
       kernel: kernelAddress,
-    };
-    const directory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../deployments");
-    await mkdir(directory, { recursive: true });
-    await writeFile(
-      path.join(directory, "hedera-testnet.json"),
-      `${JSON.stringify(manifest, null, 2)}\n`,
-      "utf8",
-    );
+      tokenId,
+      tokenDecimals: TUSDC_DECIMALS,
+      advanceUnits: ADVANCE_TOKEN_UNITS.toString(),
+      treasurySupplyUnits: TREASURY_SUPPLY_UNITS.toString(),
+      factorAccountId: factor.accountId,
+      supplierAccountId: supplier.accountId,
+      buyerAccountId: buyer.accountId,
+    });
   } finally {
     client.close();
   }
 }
 
-async function contractIdFromMirror(evmAddress: string): Promise<string> {
-  const base = (process.env.HEDERA_MIRROR_BASE_URL ?? "https://testnet.mirrornode.hedera.com").replace(
-    /\/$/,
-    "",
-  );
-  const address = evmAddress.toLowerCase();
+async function createAccount(client: Client, key: PrivateKey, hbar: number): Promise<DemoAccount> {
+  const response = await new AccountCreateTransaction()
+    .setKey(key.publicKey)
+    .setInitialBalance(new Hbar(hbar))
+    .setMaxTransactionFee(new Hbar(5))
+    .execute(client);
+  const accountId = (await response.getReceipt(client)).accountId?.toString();
+  if (accountId === undefined) {
+    throw new Error("Account creation receipt did not include an account id");
+  }
+  return {
+    accountId,
+    evmAddress: evmAddress(key),
+    privateKey: key.toStringRaw().replace(/^0x/, ""),
+  };
+}
+
+async function createToken(client: Client, treasury: string, treasuryKey: PrivateKey): Promise<string> {
+  const transaction = await new TokenCreateTransaction()
+    .setTokenName("ClaimState Demo USD")
+    .setTokenSymbol("tUSDC")
+    .setDecimals(TUSDC_DECIMALS)
+    .setInitialSupply(TREASURY_SUPPLY_UNITS)
+    .setTreasuryAccountId(treasury)
+    .setSupplyKey(treasuryKey.publicKey)
+    .setTokenMemo("Demo advance. Not an assignment and not a lien.")
+    .setMaxTransactionFee(new Hbar(20))
+    .freezeWith(client);
+  await transaction.sign(treasuryKey);
+  const receipt = await (await transaction.execute(client)).getReceipt(client);
+  const tokenId = receipt.tokenId?.toString();
+  if (tokenId === undefined) {
+    throw new Error("Token creation receipt did not include a token id");
+  }
+  return tokenId;
+}
+
+async function associateSupplier(
+  client: Client,
+  supplierId: string,
+  supplierKey: PrivateKey,
+  tokenId: string,
+): Promise<void> {
+  const transaction = await new TokenAssociateTransaction()
+    .setAccountId(supplierId)
+    .setTokenIds([tokenId])
+    .setMaxTransactionFee(new Hbar(5))
+    .freezeWith(client);
+  await transaction.sign(supplierKey);
+  const receipt = await (await transaction.execute(client)).getReceipt(client);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(`Token association status ${receipt.status.toString()}`);
+  }
+}
+
+function evmAddress(key: PrivateKey): string {
+  const fromSdk = key.publicKey.toEvmAddress();
+  const sdk = fromSdk.startsWith("0x") ? fromSdk : `0x${fromSdk}`;
+  const recovered = new Wallet(rawHex(key)).address;
+  if (sdk.toLowerCase() !== recovered.toLowerCase()) {
+    throw new Error("The Hedera ECDSA address does not match the address the kernel recovers");
+  }
+  return recovered;
+}
+
+function rawHex(key: PrivateKey): string {
+  const hex = key.toStringRaw();
+  return hex.startsWith("0x") ? hex : `0x${hex}`;
+}
+
+function randomHex(bytes: number): string {
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(bytes))).toString("hex");
+}
+
+async function contractIdFromMirror(evmAddressText: string): Promise<string> {
+  const address = evmAddressText.toLowerCase();
   const deadline = Date.now() + MIRROR_WAIT_MS;
   let lastStatus = 0;
   while (Date.now() < deadline) {
-    const response = await fetch(`${base}/api/v1/contracts/${address}`);
+    const response = await fetch(`${mirrorBase()}/api/v1/contracts/${address}`);
     lastStatus = response.status;
     if (response.ok) {
       const body = (await response.json()) as { contract_id?: string };
@@ -95,13 +181,5 @@ async function contractIdFromMirror(evmAddress: string): Promise<string> {
     }
     await delay(MIRROR_POLL_MS);
   }
-  throw new Error(
-    `Mirror node did not return a contract id for ${address} (last status ${lastStatus})`,
-  );
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+  throw new Error(`Mirror node did not return a contract id for ${address} (last status ${lastStatus})`);
 }
