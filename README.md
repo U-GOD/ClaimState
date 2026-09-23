@@ -4,7 +4,7 @@ ClaimState is a shared evidence layer for private financial obligations. A suppl
 
 The reference workflow is a U.S. transportation factor financing a buyer-confirmed freight invoice. The kernel itself is asset-independent. A later adapter, such as a compute SLA or a performance bond, changes the evidence policy without changing the state machine.
 
-This repository is the protocol specification and the Scaffold-HBAR template for that kernel. The off-chain state machine and commitments live in `packages/sdk`. Contracts, the indexer, and the demo are not in the tree yet.
+This repository is the protocol specification and the Scaffold-HBAR template for that kernel. The off-chain state machine and commitments live in `packages/sdk`. `ClaimStateKernel` lives in `packages/hardhat`. The indexer and the demo are not in the tree yet.
 
 The research that selected this protocol is [docs/hedera-financial-infrastructure-research.canvas.tsx](docs/hedera-financial-infrastructure-research.canvas.tsx). Read that file before changing scope. It is a Cursor canvas: the same file is installed for the ClaimState workspace, and the copy in `docs/` is the reviewable source. It records the candidate set, the kill tests, the Hedera constraints, and the decision to ship an evidence envelope rather than a tokenized-invoice market.
 
@@ -15,7 +15,8 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Protocol decision | Written |
 | Workspace skeleton and written invariants | Written |
 | Off-chain state machine and commitments | Tested, no network |
-| Contracts, indexer, and demo | Not started |
+| `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
+| Indexer and demo | Not started |
 | Target network | Hedera testnet, chain id 296 |
 | License | Apache-2.0 |
 
@@ -205,7 +206,7 @@ Chain ids: testnet `296`, mainnet `295`. This template targets testnet.
 
 ## Intended repository layout
 
-`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. The SDK does not yet build HIP-551 batches. The remaining paths are not present yet.
+`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet deploy script. The SDK does not yet build HIP-551 batches. The indexer and the demo are not present yet.
 
 ```text
 packages/hardhat/     ClaimStateKernel, deploy, and demo scripts
