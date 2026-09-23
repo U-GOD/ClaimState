@@ -16,7 +16,8 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Workspace skeleton and written invariants | Written |
 | Off-chain state machine and commitments | Tested, no network |
 | `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
-| Indexer and demo | Not started |
+| Activation batch | Built. Testnet funding waits on the same operator key |
+| Indexer and demo UI | Not started |
 | Target network | Hedera testnet, chain id 296 |
 | License | Apache-2.0 |
 
@@ -206,7 +207,7 @@ Chain ids: testnet `296`, mainnet `295`. This template targets testnet.
 
 ## Intended repository layout
 
-`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet deploy script. The SDK does not yet build HIP-551 batches. The indexer and the demo are not present yet.
+`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet scripts. The SDK builds the HIP-551 activation batch. The indexer and the demo UI are not present yet.
 
 ```text
 packages/hardhat/     ClaimStateKernel, deploy, and demo scripts
@@ -263,7 +264,7 @@ Known limits, each of which the implementation must preserve:
 - Emergency pause or freeze authority, if added for the optional receipt, is governance power and must be separate from the lifecycle key.
 - A scheduled call does not create credit and does not guarantee that the buyer will pay.
 
-Threat details will live in `THREAT_MODEL.md` and `SECURITY.md` when those phases are written. Legal limits will live in `LEGAL_BOUNDARIES.md`.
+Threat details for the activation batch live in `THREAT_MODEL.md`. `SECURITY.md` is written in a later phase. Legal limits live in `LEGAL_BOUNDARIES.md`.
 
 ## License
 
