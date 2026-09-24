@@ -62,6 +62,18 @@ export {
   type EvidenceHeaderInput,
 } from "./evidence.js";
 export {
+  CREDIT_NOTE_CENTS,
+  FACE_AMOUNT_CENTS,
+  MAX_SCHEDULE_FUTURE_SECONDS,
+  assertScheduleDueDate,
+  dilutedAmountCommitment,
+  dilutedTermsRoot,
+  parseFreightPlan,
+  type FreightPlan,
+  type PaymentAllocation,
+} from "./payment-plan.js";
+export { buildDelinquencySchedule } from "./schedule.js";
+export {
   OBLIGATION_STATES,
   STATE_CODE,
   ZERO_ADDRESS,
