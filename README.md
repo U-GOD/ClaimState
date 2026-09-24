@@ -17,6 +17,7 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Off-chain state machine and commitments | Tested, no network |
 | `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
 | Activation batch | Built. Testnet funding waits on the same operator key |
+| Servicing | Credit note, payment, release, dispute, and delinquency schedule are scripted. Testnet still waits on the operator key |
 | Indexer and demo UI | Not started |
 | Target network | Hedera testnet, chain id 296 |
 | License | Apache-2.0 |
