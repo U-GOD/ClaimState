@@ -23,7 +23,8 @@ export interface EvidenceHeaderInput {
   eventType: EventType;
   obligationId: string;
   version: bigint;
-  previousState: ObligationStateName;
+  /** Null is the empty slot before Create. It is not a state. */
+  previousState: ObligationStateName | null;
   newState: ObligationStateName;
   termsRoot: string;
   evidenceHash: string;
@@ -53,7 +54,7 @@ export function encodeEvidenceHeader(input: EvidenceHeaderInput): Uint8Array {
   header[1] = EVENT_TYPE_CODE[input.eventType];
   header.set(readBytes32(input.obligationId), 2);
   writeUint64(header, 34, input.version);
-  header[42] = STATE_CODE[input.previousState];
+  header[42] = input.previousState === null ? 0 : STATE_CODE[input.previousState];
   header[43] = STATE_CODE[input.newState];
   header.set(readBytes32(input.termsRoot), 44);
   header.set(readBytes32(input.evidenceHash), 76);
