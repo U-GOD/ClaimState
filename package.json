@@ -16,7 +16,9 @@
     "smoke:acknowledge": "npm run smoke:acknowledge --workspace=@claimstate/hardhat",
     "demo:obligation": "npm run demo:obligation --workspace=@claimstate/hardhat",
     "verify:mirror": "npm run verify:mirror --workspace=@claimstate/hardhat",
-    "verify:activation": "npm run verify:activation --workspace=@claimstate/hardhat"
+    "verify:activation": "npm run verify:activation --workspace=@claimstate/hardhat",
+    "fixture:delinquency": "npm run fixture:delinquency --workspace=@claimstate/hardhat",
+    "fixture:dispute": "npm run fixture:dispute --workspace=@claimstate/hardhat"
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.88.0"
