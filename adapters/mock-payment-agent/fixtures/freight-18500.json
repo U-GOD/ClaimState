@@ -1,0 +1,12 @@
+{
+  "currency": "USD",
+  "faceAmountCents": 1850000,
+  "creditNoteCents": 50000,
+  "dueDate": "2026-12-31",
+  "debtorReference": "debtor-ref-1",
+  "carrierReference": "carrier-ref-1",
+  "allocations": [
+    { "settles": false, "label": "short-pay-report" },
+    { "settles": true, "label": "collection" }
+  ]
+}
