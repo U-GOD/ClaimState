@@ -1,16 +1,14 @@
 import { readFile } from "node:fs/promises";
-import { TransactionReceiptQuery } from "@hiero-ledger/sdk";
-import { decodeEvidenceHeader, holderIsUndisclosed } from "@claimstate/sdk";
+import { decodeEvidenceHeader, holderIsUndisclosed, STATE_CODE } from "@claimstate/sdk";
 import {
-  activationReceiptPath,
   delay,
+  HAPPY_PATH_STEPS,
+  lifecycleReceiptPath,
   mirrorBase,
   operatorClient,
-  readDemoAccounts,
-  readManifest,
-  type ActivationReceipt,
+  type LifecycleReceipt,
 } from "./session.js";
-import { assertReserved, readEnvelope, tokenUnits } from "./obligation.js";
+import { readEnvelope, tokenUnits } from "./obligation.js";
 
 const MIRROR_WAIT_MS = 90_000;
 const MIRROR_POLL_MS = 3_000;
@@ -18,43 +16,50 @@ const MIRROR_POLL_MS = 3_000;
 await verify();
 
 async function verify(): Promise<void> {
-  const manifest = await readManifest();
-  const accounts = await readDemoAccounts();
-  const receipt = JSON.parse(await readFile(activationReceiptPath, "utf8")) as ActivationReceipt;
-  const evidence = Uint8Array.from(Buffer.from(receipt.evidenceBase64, "base64"));
-  if (!holderIsUndisclosed(evidence)) {
-    throw new Error("The stored evidence header disclosed the reservation holder");
+  const receipt = JSON.parse(await readFile(lifecycleReceiptPath, "utf8")) as LifecycleReceipt;
+  if (receipt.steps.map((step) => step.name).join(",") !== HAPPY_PATH_STEPS.join(",")) {
+    throw new Error("Receipt steps are not create, acknowledge, activate, credit note, payment, and release");
+  }
+  let previous = 0n;
+  for (const step of receipt.steps) {
+    const sequence = BigInt(step.sequenceNumber);
+    if (sequence <= previous) {
+      throw new Error("Topic sequence numbers are not in order");
+    }
+    previous = sequence;
+    const evidence = Uint8Array.from(Buffer.from(step.evidenceBase64, "base64"));
+    if (!holderIsUndisclosed(evidence)) {
+      throw new Error(`The ${step.name} header disclosed the reservation holder`);
+    }
   }
   const client = operatorClient();
   try {
-    for (const transactionId of receipt.innerTransactionIds) {
-      const inner = await new TransactionReceiptQuery().setTransactionId(transactionId).execute(client);
-      if (inner.status.toString() !== "SUCCESS") {
-        throw new Error(`Inner transaction ${transactionId} status ${inner.status.toString()}`);
-      }
+    const envelope = await readEnvelope(client, receipt.contractId, receipt.obligationId);
+    if (envelope.state !== BigInt(STATE_CODE.RELEASED) || envelope.version.toString() !== receipt.version) {
+      throw new Error("Consensus state is not the released receipt");
     }
-    const envelope = await readEnvelope(client, manifest.contractId, receipt.obligationId);
-    assertReserved(envelope, accounts.factor.evmAddress);
     const balance = await tokenUnits(client, receipt.supplierAccountId, receipt.tokenId);
     if (balance.toString() !== receipt.supplierBalanceAfter) {
-      throw new Error("Consensus token balance does not match the activation receipt");
+      throw new Error("Consensus token balance does not match the lifecycle receipt");
     }
-    console.log("consensus: RESERVED");
+    console.log("consensus: RELEASED");
     console.log(`consensusBalance: ${balance.toString()}`);
-
-    const mirrored = await mirrorMessage(receipt.topicId, receipt.topicSequenceNumber);
-    if (Buffer.compare(Buffer.from(mirrored), Buffer.from(evidence)) !== 0) {
-      throw new Error("Mirror topic message does not match the consensus evidence header");
-    }
-    const decoded = decodeEvidenceHeader(mirrored);
-    if (decoded.holder !== `0x${"00".repeat(20)}`) {
-      throw new Error("Mirror topic message disclosed the reservation holder");
+    for (const step of receipt.steps) {
+      const mirrored = await mirrorMessage(receipt.topicId, step.sequenceNumber);
+      const stored = Uint8Array.from(Buffer.from(step.evidenceBase64, "base64"));
+      if (Buffer.compare(Buffer.from(mirrored), Buffer.from(stored)) !== 0) {
+        throw new Error(`Mirror topic message ${step.sequenceNumber} does not match ${step.name}`);
+      }
+      const decoded = decodeEvidenceHeader(mirrored);
+      if (decoded.holder !== `0x${"00".repeat(20)}`) {
+        throw new Error(`Mirror message ${step.name} disclosed the reservation holder`);
+      }
+      console.log(`${step.name}: ${step.sequenceNumber}`);
     }
     const mirrorBalance = await mirrorTokenBalance(receipt.supplierAccountId, receipt.tokenId);
     if (mirrorBalance !== balance) {
       throw new Error("Mirror token balance does not match the consensus balance");
     }
-    console.log(`mirrorSequence: ${receipt.topicSequenceNumber}`);
     console.log(`mirrorBalance: ${mirrorBalance.toString()}`);
   } finally {
     client.close();
