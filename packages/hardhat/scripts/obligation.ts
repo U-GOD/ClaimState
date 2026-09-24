@@ -7,6 +7,7 @@ import {
   ReceiptStatusError,
   StatusError,
   TopicInfoQuery,
+  TopicMessageSubmitTransaction,
   TransactionRecordQuery,
 } from "@hiero-ledger/sdk";
 import type { Client, TransactionResponse } from "@hiero-ledger/sdk";
@@ -18,6 +19,7 @@ import {
   buildActivationBatch,
   commercialFieldBytes,
   domainSeparator,
+  encodeEvidenceHeader,
   hmacFingerprintProvider,
   holderIsUndisclosed,
   obligationId as obligationIdOf,
@@ -47,6 +49,12 @@ export interface EnvelopeView {
   amountCommitment: string;
 }
 
+export interface EvidenceStep {
+  name: string;
+  sequenceNumber: string;
+  evidenceBase64: string;
+}
+
 export interface OpenedObligation {
   obligationId: string;
   termsRoot: string;
@@ -54,6 +62,9 @@ export interface OpenedObligation {
   expectedVersion: bigint;
   activateCalldata: Uint8Array;
   activateEventId: string;
+  domain: string;
+  dueUnix: bigint;
+  evidenceSteps: EvidenceStep[];
 }
 
 export async function openAcknowledged(
@@ -61,6 +72,7 @@ export async function openAcknowledged(
   manifest: DeploymentManifest,
   accounts: DemoAccounts,
   reference: string,
+  options?: { dueDate?: string; dueUnix?: bigint; publishEvidence?: boolean },
 ): Promise<OpenedObligation> {
   const supplier = new Wallet(hexKey(accounts.supplier.privateKey));
   const buyer = new Wallet(hexKey(accounts.buyer.privateKey));
@@ -71,11 +83,13 @@ export async function openAcknowledged(
     topicId: manifest.topicId,
     networkLabel: "testnet",
   });
+  const dueDate = options?.dueDate ?? DUE_DATE;
+  const dueUnix = options?.dueUnix ?? DUE_UNIX;
   const fields = commercialFieldBytes({
     schemaVersion: 1,
     currency: "USD",
     amountCents: FACE_AMOUNT_CENTS,
-    dueDate: DUE_DATE,
+    dueDate,
     debtorReference: reference,
     carrierReference: reference,
   });
@@ -112,8 +126,9 @@ export async function openAcknowledged(
     supplier: supplier.address,
     paymentAgent,
     scheduledExecutor: paymentAgent,
-    dueDate: DUE_UNIX,
+    dueDate: dueUnix,
   };
+  const evidenceSteps: EvidenceStep[] = [];
   await execute(
     client,
     manifest.contractId,
@@ -134,6 +149,25 @@ export async function openAcknowledged(
       ]),
     ),
   );
+  if (options?.publishEvidence) {
+    evidenceSteps.push(
+      await publishHeader(
+        client,
+        manifest.topicId,
+        encodeEvidenceHeader({
+          eventType: "Create",
+          obligationId: id,
+          version: 1n,
+          previousState: null,
+          newState: "DRAFT",
+          termsRoot,
+          evidenceHash: payloadHash(created),
+          actorRole: "supplier",
+        }),
+        "create",
+      ),
+    );
+  }
 
   const acknowledged: ClaimEvent = {
     eventType: "Acknowledge",
@@ -155,6 +189,25 @@ export async function openAcknowledged(
       ]),
     ),
   );
+  if (options?.publishEvidence) {
+    evidenceSteps.push(
+      await publishHeader(
+        client,
+        manifest.topicId,
+        encodeEvidenceHeader({
+          eventType: "Acknowledge",
+          obligationId: id,
+          version: 2n,
+          previousState: "DRAFT",
+          newState: "ACKNOWLEDGED",
+          termsRoot,
+          evidenceHash: payloadHash(acknowledged),
+          actorRole: "buyer",
+        }),
+        "acknowledge",
+      ),
+    );
+  }
 
   const activated: ClaimEvent = {
     eventType: "Activate",
@@ -172,6 +225,9 @@ export async function openAcknowledged(
     evidenceHash: payloadHash(activated),
     expectedVersion: 2n,
     activateEventId: activateId,
+    domain,
+    dueUnix,
+    evidenceSteps,
     activateCalldata: getBytes(
       kernel.encodeFunctionData("activate", [
         id,
@@ -332,6 +388,33 @@ export function assertReserved(envelope: EnvelopeView, factor: string): void {
   }
 }
 
+export async function publishHeader(
+  client: Client,
+  topicId: string,
+  evidence: Uint8Array,
+  name: string,
+): Promise<EvidenceStep> {
+  assertUndisclosed(evidence);
+  const { privateKey } = requireOperatorEnv();
+  const transaction = await new TopicMessageSubmitTransaction()
+    .setTopicId(topicId)
+    .setMessage(evidence)
+    .setMaxTransactionFee(new Hbar(2))
+    .freezeWith(client);
+  await transaction.sign(privateKey);
+  const response = await transaction.execute(client);
+  const receipt = await response.getReceipt(client);
+  const sequenceNumber = receipt.topicSequenceNumber?.toString();
+  if (sequenceNumber === undefined) {
+    throw new Error(`Topic submit for ${name} did not return a sequence`);
+  }
+  return {
+    name,
+    sequenceNumber,
+    evidenceBase64: Buffer.from(evidence).toString("base64"),
+  };
+}
+
 export function assertUndisclosed(evidence: Uint8Array): void {
   if (!holderIsUndisclosed(evidence)) {
     throw new Error("The HCS header disclosed the reservation holder");
@@ -368,7 +451,7 @@ async function feeOf(client: Client, response: TransactionResponse): Promise<str
   }
 }
 
-function sign(wallet: Wallet, domain: string, event: ClaimEvent, id: string): string {
+export function sign(wallet: Wallet, domain: string, event: ClaimEvent, id: string): string {
   const digest = actionDigest({
     domain,
     eventType: event.eventType,
