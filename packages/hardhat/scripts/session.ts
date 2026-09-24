@@ -10,6 +10,7 @@ export const packageRoot = path.resolve(scriptDir, "..");
 export const repoRoot = path.resolve(packageRoot, "../..");
 export const manifestPath = path.join(packageRoot, "deployments", "hedera-testnet.json");
 export const activationReceiptPath = path.join(packageRoot, "deployments", "activation-receipt.json");
+export const lifecycleReceiptPath = path.join(packageRoot, "deployments", "lifecycle-receipt.json");
 export const demoAccountsPath = path.join(repoRoot, "data", "private", "demo-accounts.json");
 
 export interface DeploymentManifest {
@@ -40,6 +41,37 @@ export interface DemoAccounts {
   factor: DemoAccount;
   supplier: DemoAccount;
   buyer: DemoAccount;
+}
+
+export const HAPPY_PATH_STEPS = [
+  "create",
+  "acknowledge",
+  "activate",
+  "creditNote",
+  "payment",
+  "payment",
+  "release",
+] as const;
+
+export interface LifecycleStep {
+  name: string;
+  sequenceNumber: string;
+  evidenceBase64: string;
+}
+
+export interface LifecycleReceipt {
+  network: "hedera-testnet";
+  chainId: 296;
+  obligationId: string;
+  contractId: string;
+  topicId: string;
+  tokenId: string;
+  supplierAccountId: string;
+  supplierBalanceAfter: string;
+  advanceUnits: string;
+  state: "RELEASED";
+  version: string;
+  steps: LifecycleStep[];
 }
 
 export interface ActivationReceipt {
