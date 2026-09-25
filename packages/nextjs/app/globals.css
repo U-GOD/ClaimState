@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+  font-family: Georgia, serif;
+  color: #1c1917;
+  background: #faf7f2;
+}
+
+header, main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+a {
+  color: #1d4ed8;
+}
+
+section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e7e5e4;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+code, pre {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.pending {
+  color: #9a3412;
+}
+
+.resolved {
+  color: #166534;
+}
