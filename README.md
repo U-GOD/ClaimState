@@ -4,7 +4,7 @@ ClaimState is a shared evidence layer for private financial obligations. A suppl
 
 The reference workflow is a U.S. transportation factor financing a buyer-confirmed freight invoice. The kernel itself is asset-independent. A later adapter, such as a compute SLA or a performance bond, changes the evidence policy without changing the state machine.
 
-This repository is the protocol specification and the Scaffold-HBAR template for that kernel. The off-chain state machine and commitments live in `packages/sdk`. `ClaimStateKernel` lives in `packages/hardhat`. The indexer and the demo are not in the tree yet.
+This repository is the protocol specification and the Scaffold-HBAR template for that kernel. The off-chain state machine and commitments live in `packages/sdk`. `ClaimStateKernel` lives in `packages/hardhat`. The indexer and the demo UI live in `packages/indexer` and `packages/nextjs`.
 
 The research that selected this protocol is [docs/hedera-financial-infrastructure-research.canvas.tsx](docs/hedera-financial-infrastructure-research.canvas.tsx). Read that file before changing scope. It is a Cursor canvas: the same file is installed for the ClaimState workspace, and the copy in `docs/` is the reviewable source. It records the candidate set, the kill tests, the Hedera constraints, and the decision to ship an evidence envelope rather than a tokenized-invoice market.
 
@@ -18,7 +18,7 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
 | Activation batch | Built. Testnet funding waits on the same operator key |
 | Servicing | Credit note, payment, release, dispute, and delinquency schedule are scripted. Testnet still waits on the operator key |
-| Indexer and demo UI | Not started |
+| Indexer and demo UI | Read model and `/demo`. A funded topic still waits on the operator key |
 | Target network | Hedera testnet, chain id 296 |
 | License | Apache-2.0 |
 
@@ -208,7 +208,7 @@ Chain ids: testnet `296`, mainnet `295`. This template targets testnet.
 
 ## Intended repository layout
 
-`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet scripts. The SDK builds the HIP-551 activation batch. The indexer and the demo UI are not present yet.
+`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet scripts. The SDK builds the HIP-551 activation batch. `packages/indexer` reconciles Mirror Node after the consensus receipt. `packages/nextjs` serves `/demo` and `/obligations/[id]`.
 
 ```text
 packages/hardhat/     ClaimStateKernel, deploy, and demo scripts
