@@ -16,7 +16,7 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Workspace skeleton and written invariants | Written |
 | Off-chain state machine and commitments | Tested, no network |
 | `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
-| Activation batch | Built. Testnet funding waits on the same operator key |
+| Activation batch | Built, including the receipt mint. Testnet funding waits on the same operator key |
 | Servicing | Credit note, payment, release, dispute, and delinquency schedule are scripted. Testnet still waits on the operator key |
 | Indexer and demo UI | Read model and `/demo`. A funded topic still waits on the operator key |
 | Target network | Hedera testnet, chain id 296 |
@@ -198,7 +198,7 @@ actionDigest       = keccak256(domain, eventType, obligationId, expectedVersion,
 | Smart Contract Service | `ClaimStateKernel` enforces the transition table, version, and signatures. |
 | HIP-551 batch | Binds activation, HCS evidence, and the `tUSDC` advance. |
 | Consensus Service | Public, ordered evidence header. A submit key restricts writers, not readers. |
-| Token Service | Demo advance. An optional NFT receipt, if it fits in the batch, is labeled as not title. |
+| Token Service | Demo advance, plus one NFT receipt minted in the same activation batch. Metadata is the obligation id and `operational-receipt-not-title`. Burning that NFT does not release the reservation. |
 | Schedule Service | One-shot `markDelinquent` at the due date. There is no native repeating schedule. |
 | Mirror Node | Indexed read model after consensus. Not the write-path source of truth. |
 
