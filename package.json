@@ -11,7 +11,11 @@
   ],
   "scripts": {
     "compile": "npm run compile --workspace=@claimstate/hardhat",
+    "lint": "npm run typecheck --workspace=@claimstate/sdk && npm run typecheck --workspace=@claimstate/indexer && npx tsc -p packages/hardhat/tsconfig.json --noEmit",
     "test": "npm run test --workspace=@claimstate/sdk && npm run test --workspace=@claimstate/indexer && npm run test --workspace=@claimstate/hardhat",
+    "scaffold:check": "node scripts/check-scaffold.mjs",
+    "harness:doctor": "hedera-harness doctor .harness/spec.yaml --recipe-only",
+    "harness:validate": "hedera-harness validate .harness/spec.yaml",
     "dev": "npm run dev --workspace=@claimstate/nextjs",
     "deploy:testnet": "npm run deploy:testnet --workspace=@claimstate/hardhat",
     "smoke:acknowledge": "npm run smoke:acknowledge --workspace=@claimstate/hardhat",
@@ -23,5 +27,9 @@
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.88.0"
+  },
+  "devDependencies": {
+    "hedera-harness": "1.2.2",
+    "playwright": "1.61.1"
   }
 }
