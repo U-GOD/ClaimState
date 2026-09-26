@@ -21,6 +21,7 @@ export interface DeploymentManifest {
   contractEvmAddress: string;
   kernel: string;
   tokenId: string;
+  receiptTokenId: string;
   tokenDecimals: 2;
   advanceUnits: string;
   treasurySupplyUnits: string;
