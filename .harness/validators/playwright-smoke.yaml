@@ -1,0 +1,17 @@
+name: claimstate-demo
+server:
+  command: node scripts/dev-demo.mjs
+  url: http://127.0.0.1:3210
+  timeoutMs: 180000
+defaults:
+  timeoutMs: 60000
+  hydrationTimeoutMs: 60000
+  failOnConsoleError: true
+routes:
+  - name: demo
+    path: /demo
+  - name: obligation
+    path: /obligations/0xabababababababababababababababababababababababababababababababab
+forbidden:
+  visibleText:
+    - Application error
