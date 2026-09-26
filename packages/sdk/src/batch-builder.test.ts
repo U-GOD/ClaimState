@@ -5,6 +5,7 @@ import {
   Client,
   ContractExecuteTransaction,
   PrivateKey,
+  TokenMintTransaction,
   TopicMessageSubmitTransaction,
   TransferTransaction,
 } from "@hiero-ledger/sdk";
@@ -12,7 +13,9 @@ import {
   ADVANCE_TOKEN_UNITS,
   BatchTooLargeError,
   MAX_OUTER_BATCH_BYTES,
+  RECEIPT_METADATA_LABEL,
   buildActivationBatch,
+  operationalReceiptMetadata,
 } from "./batch-builder.js";
 import {
   ACTOR_ROLE,
@@ -75,6 +78,7 @@ test("the activation batch binds the contract call, the header, and the advance"
       contractId: "0.0.2001",
       topicId: "0.0.2002",
       tokenId: "0.0.2003",
+      receiptTokenId: "0.0.2004",
       factorAccountId: "0.0.1001",
       supplierAccountId: "0.0.1002",
       functionParameters: activateCalldata(),
@@ -87,17 +91,22 @@ test("the activation batch binds the contract call, the header, and the advance"
 
     assert.ok(built.outerBytes > 0);
     assert.ok(built.outerBytes <= MAX_OUTER_BATCH_BYTES);
-    assert.equal(built.innerTransactionIds.length, 3);
-    assert.equal(new Set(built.innerTransactionIds).size, 3);
+    assert.equal(built.innerTransactionIds.length, 4);
+    assert.equal(new Set(built.innerTransactionIds).size, 4);
     for (const id of built.innerTransactionIds) {
       assert.ok(id.startsWith("0.0.1001@"));
     }
 
     const inners = built.batch.innerTransactions;
-    assert.equal(inners.length, 3);
+    assert.equal(inners.length, 4);
     assert.ok(inners[0] instanceof ContractExecuteTransaction);
     assert.ok(inners[1] instanceof TopicMessageSubmitTransaction);
     assert.ok(inners[2] instanceof TransferTransaction);
+    assert.ok(inners[3] instanceof TokenMintTransaction);
+    const minted = (inners[3] as TokenMintTransaction).metadata;
+    assert.equal(minted.length, 1);
+    assert.deepEqual(minted[0], operationalReceiptMetadata(obligationId));
+    assert.ok(Buffer.from(minted[0] ?? []).includes(Buffer.from(RECEIPT_METADATA_LABEL)));
     const batchKeyText = batchKey.publicKey.toString();
     for (const inner of inners) {
       assert.equal(inner.batchKey?.toString(), batchKeyText);
@@ -135,6 +144,7 @@ test("an oversized activation batch is refused intact", async () => {
           contractId: "0.0.2001",
           topicId: "0.0.2002",
           tokenId: "0.0.2003",
+          receiptTokenId: "0.0.2004",
           factorAccountId: "0.0.1001",
           supplierAccountId: "0.0.1002",
           functionParameters: activateCalldata(),
