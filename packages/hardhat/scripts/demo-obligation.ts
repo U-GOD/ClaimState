@@ -13,6 +13,8 @@ import {
   activateCalldata,
   activationBatch,
   assertReserved,
+  burnReceipt,
+  mintSerial,
   assertUndisclosed,
   openAcknowledged,
   readEnvelope,
@@ -40,6 +42,7 @@ async function demo(): Promise<void> {
     if (!outcome.success || outcome.topicSequenceNumber === null) {
       throw new Error(`Activation batch status ${outcome.status}`);
     }
+    const serial = await mintSerial(operator, built.innerTransactionIds[3]);
     const reserved = await readEnvelope(operator, manifest.contractId, opened.obligationId);
     assertReserved(reserved, accounts.factor.evmAddress);
     const after = await tokenUnits(operator, manifest.supplierAccountId, manifest.tokenId);
@@ -91,6 +94,7 @@ async function demo(): Promise<void> {
       topicId: manifest.topicId,
     });
     steps.push(released.step);
+    await burnReceipt(factor, manifest.receiptTokenId, serial);
     const finalVersion = await assertReleased(operator, manifest.contractId, opened.obligationId);
     if (steps.map((step) => step.name).join(",") !== HAPPY_PATH_STEPS.join(",")) {
       throw new Error("Topic steps are not create, acknowledge, activate, credit note, payment, and release");
