@@ -1,0 +1,50 @@
+schemaVersion: 2
+
+name: claimstate
+description: Privacy-preserving obligation envelope and one in-network reservation on Hedera testnet.
+
+baseline:
+  commands:
+    - name: install
+      command: npm install
+      timeoutMs: 600000
+    - name: lint
+      command: npm run lint
+      timeoutMs: 300000
+
+constraints:
+  packageManager: npm
+  workspaces:
+    - packages/hardhat
+    - packages/sdk
+    - packages/indexer
+    - packages/nextjs
+
+validators:
+  static: .harness/validators/static.json
+  commands: .harness/validators/yarn.json
+  # playwright-smoke.yaml is the Tier 2 route list. hedera-harness 1.2.2 detaches
+  # that server and never sees its URL on Windows, so the demo check runs as the
+  # "demo" command instead.
+
+contract: .harness/acceptance-contract.json
+validator:
+  enabled: true
+
+chainValidation:
+  enabled: true
+  network: testnet
+  operator:
+    accountIdEnv: HEDERA_OPERATOR_ID
+    privateKeyEnv: HEDERA_OPERATOR_ECDSA_KEY
+  fundingHbar: 20
+  sweepBack: true
+  expose:
+    envVars:
+      - HEDERA_OPERATOR_ID
+      - HEDERA_OPERATOR_ECDSA_KEY
+  deploy:
+    commands:
+      - name: deploy-testnet
+        command: npm run deploy:testnet
+        timeoutMs: 600000
