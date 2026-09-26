@@ -43,9 +43,11 @@ export {
   ADVANCE_TOKEN_UNITS,
   BatchTooLargeError,
   MAX_OUTER_BATCH_BYTES,
+  RECEIPT_METADATA_LABEL,
   TREASURY_SUPPLY_UNITS,
   TUSDC_DECIMALS,
   buildActivationBatch,
+  operationalReceiptMetadata,
   type ActivationBatch,
   type ActivationBatchInput,
 } from "./batch-builder.js";
