@@ -19,6 +19,7 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Activation batch | Built, including the receipt mint. Testnet funding waits on the same operator key |
 | Servicing | Credit note, payment, release, dispute, and delinquency schedule are scripted. Testnet still waits on the operator key |
 | Indexer and demo UI | Read model and `/demo`. A funded topic still waits on the operator key |
+| Scaffold and harness | Recipe, validators, and `SECURITY.md` are in the tree. A funded harness run still waits on the operator key |
 | Target network | Hedera testnet, chain id 296 |
 | License | Apache-2.0 |
 
@@ -222,7 +223,7 @@ schemas/              Obligation, event, and evidence JSON schemas
 
 `template.json` will describe this repo to `create-scaffold-hbar`. That file is removed from apps generated from the template. Harness checks against a generated app must not require it.
 
-The intended developer path, once Phase 7 is complete:
+Developer path:
 
 ```bash
 npx create-scaffold-hbar@latest claimstate-demo --template U-GOD/ClaimState
@@ -233,7 +234,7 @@ npm run verify:mirror
 npm run dev
 ```
 
-Requirements for that path: Node.js `>=20.18.3`, npm, and a funded Hedera testnet account with an ECDSA key. Those commands will fail in this repository until the corresponding phases land.
+`npm install`, `npm run lint`, `npm test`, and `npm run dev` do not need an operator key. `deploy:testnet`, `demo:obligation`, and `verify:mirror` do. Public Hashio is the default JSON-RPC for that local demo and is not a production endpoint. The activation batch, including the receipt mint, must stay under 6 KB. Generated apps do not keep `template.json`; `npm run scaffold:check` deletes it and still runs install, lint, test, and the demo build.
 
 ## Build order
 
@@ -265,7 +266,7 @@ Known limits, each of which the implementation must preserve:
 - Emergency pause or freeze authority, if added for the optional receipt, is governance power and must be separate from the lifecycle key.
 - A scheduled call does not create credit and does not guarantee that the buyer will pay.
 
-Threat details for the activation batch live in `THREAT_MODEL.md`. `SECURITY.md` is written in a later phase. Legal limits live in `LEGAL_BOUNDARIES.md`.
+Threat details for the activation batch live in `THREAT_MODEL.md`. Key handling, topic contents, and the absence of a pause key live in `SECURITY.md`. Legal limits live in `LEGAL_BOUNDARIES.md`.
 
 ## License
 
