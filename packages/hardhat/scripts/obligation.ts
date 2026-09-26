@@ -6,6 +6,7 @@ import {
   PrivateKey,
   ReceiptStatusError,
   StatusError,
+  TokenBurnTransaction,
   TopicInfoQuery,
   TopicMessageSubmitTransaction,
   TransactionRecordQuery,
@@ -286,6 +287,7 @@ export async function activationBatch(input: {
     contractId: input.manifest.contractId,
     topicId: input.manifest.topicId,
     tokenId: input.manifest.tokenId,
+    receiptTokenId: input.manifest.receiptTokenId,
     factorAccountId: input.manifest.factorAccountId,
     supplierAccountId: input.supplierAccountId ?? input.manifest.supplierAccountId,
     functionParameters: input.functionParameters ?? input.obligation.activateCalldata,
@@ -322,6 +324,28 @@ export async function tokenUnits(client: Client, accountId: string, tokenId: str
   const balance = await new AccountBalanceQuery().setAccountId(accountId).execute(client);
   const row = balance.toJSON().tokens.find((entry) => entry.tokenId === tokenId);
   return row === undefined ? 0n : BigInt(row.balance);
+}
+
+export async function mintSerial(client: Client, transactionId: string): Promise<number> {
+  const record = await new TransactionRecordQuery().setTransactionId(transactionId).execute(client);
+  const serial = record.receipt.serials[0];
+  if (serial === undefined) {
+    throw new Error("The receipt mint did not return a serial");
+  }
+  return Number(serial.toString());
+}
+
+/** Burns the operational receipt. This does not change kernel state and does not release a reservation. */
+export async function burnReceipt(client: Client, tokenId: string, serial: number): Promise<void> {
+  const response = await new TokenBurnTransaction()
+    .setTokenId(tokenId)
+    .setSerials([serial])
+    .setMaxTransactionFee(new Hbar(5))
+    .execute(client);
+  const receipt = await response.getReceipt(client);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(`Receipt burn status ${receipt.status.toString()}`);
+  }
 }
 
 export async function topicSequence(client: Client, topicId: string): Promise<string> {
