@@ -1,4 +1,13 @@
-import { AccountCreateTransaction, Hbar, PrivateKey, TokenAssociateTransaction, TokenCreateTransaction, TopicCreateTransaction } from "@hiero-ledger/sdk";
+import {
+  AccountCreateTransaction,
+  Hbar,
+  PrivateKey,
+  TokenAssociateTransaction,
+  TokenCreateTransaction,
+  TokenSupplyType,
+  TokenType,
+  TopicCreateTransaction,
+} from "@hiero-ledger/sdk";
 import type { Client } from "@hiero-ledger/sdk";
 import { Wallet } from "ethers";
 import { network } from "hardhat";
@@ -47,7 +56,9 @@ async function deploy(): Promise<void> {
 
     const tokenId = await createToken(client, factor.accountId, factorKey);
     await associateSupplier(client, supplier.accountId, supplierKey, tokenId);
+    const receiptTokenId = await createReceiptToken(client, factor.accountId, factorKey);
     console.log(`tokenId: ${tokenId}`);
+    console.log(`receiptTokenId: ${receiptTokenId}`);
 
     const { ethers } = await network.create("hederaTestnet");
     const kernel = await ethers.deployContract(
@@ -80,6 +91,7 @@ async function deploy(): Promise<void> {
       contractEvmAddress,
       kernel: kernelAddress,
       tokenId,
+      receiptTokenId,
       tokenDecimals: TUSDC_DECIMALS,
       advanceUnits: ADVANCE_TOKEN_UNITS.toString(),
       treasurySupplyUnits: TREASURY_SUPPLY_UNITS.toString(),
@@ -125,6 +137,26 @@ async function createToken(client: Client, treasury: string, treasuryKey: Privat
   const tokenId = receipt.tokenId?.toString();
   if (tokenId === undefined) {
     throw new Error("Token creation receipt did not include a token id");
+  }
+  return tokenId;
+}
+
+async function createReceiptToken(client: Client, treasury: string, treasuryKey: PrivateKey): Promise<string> {
+  const transaction = await new TokenCreateTransaction()
+    .setTokenName("ClaimState Operational Receipt")
+    .setTokenSymbol("CS-RCPT")
+    .setTokenType(TokenType.NonFungibleUnique)
+    .setSupplyType(TokenSupplyType.Infinite)
+    .setTreasuryAccountId(treasury)
+    .setSupplyKey(treasuryKey.publicKey)
+    .setTokenMemo("Operational receipt. Not an assignment and not a lien.")
+    .setMaxTransactionFee(new Hbar(20))
+    .freezeWith(client);
+  await transaction.sign(treasuryKey);
+  const receipt = await (await transaction.execute(client)).getReceipt(client);
+  const tokenId = receipt.tokenId?.toString();
+  if (tokenId === undefined) {
+    throw new Error("Receipt token creation did not include a token id");
   }
   return tokenId;
 }
