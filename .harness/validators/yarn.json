@@ -1,0 +1,43 @@
+{
+  "name": "claimstate-commands",
+  "description": "Install, lint, unit test, and the Next.js build. None of these need a funded account.",
+  "requiresNoSecrets": true,
+  "commands": [
+    {
+      "name": "install",
+      "command": "npm install",
+      "timeoutMs": 600000,
+      "purpose": "Install workspace dependencies."
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "timeoutMs": 300000,
+      "purpose": "Typecheck the SDK, indexer, kernel scripts, and demo."
+    },
+    {
+      "name": "test",
+      "command": "npm test",
+      "timeoutMs": 600000,
+      "purpose": "Unit tests for the state machine, indexer, and kernel."
+    },
+    {
+      "name": "build",
+      "command": "npm run build --workspace=@claimstate/nextjs",
+      "timeoutMs": 600000,
+      "purpose": "Production build of the demo."
+    },
+    {
+      "name": "demo",
+      "command": "node scripts/smoke-demo.mjs",
+      "timeoutMs": 180000,
+      "purpose": "Open /demo and require the seven steps and ALREADY_RESERVED."
+    },
+    {
+      "name": "copy",
+      "command": "node scripts/check-copy.mjs",
+      "timeoutMs": 60000,
+      "purpose": "Reject the claim that an HTS token assigns a receivable, and reject a plaintext invoice number in committed fixtures."
+    }
+  ]
+}
