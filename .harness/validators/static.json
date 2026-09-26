@@ -1,0 +1,38 @@
+{
+  "name": "claimstate-static",
+  "description": "Docs, kernel, schemas, and the gitignore boundary.",
+  "fileAssertions": {
+    "required": [
+      "AGENTS.md",
+      "LEGAL_BOUNDARIES.md",
+      "SECURITY.md",
+      "README.md",
+      "schemas/event.schema.json",
+      "packages/hardhat/contracts/ClaimStateKernel.sol",
+      ".gitignore"
+    ],
+    "forbidden": [
+      ".env",
+      ".env.local",
+      "data/private/demo-accounts.json"
+    ]
+  },
+  "textAssertions": [
+    {
+      "file": ".gitignore",
+      "contains": ["data/private", ".env.local"]
+    },
+    {
+      "file": "README.md",
+      "contains": ["6 KB", "Hashio", "npm run demo:obligation", "npm run dev"]
+    },
+    {
+      "file": "LEGAL_BOUNDARIES.md",
+      "contains": ["not an assignment", "not a lien"]
+    },
+    {
+      "file": "SECURITY.md",
+      "contains": ["testnet", "pause key"]
+    }
+  ]
+}
