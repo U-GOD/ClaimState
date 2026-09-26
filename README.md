@@ -21,7 +21,7 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 | Indexer and demo UI | Read model and `/demo`. A funded topic still waits on the operator key |
 | Scaffold and harness | Recipe, validators, and `SECURITY.md` are in the tree. A funded harness run still waits on the operator key |
 | Target network | Hedera testnet, chain id 296 |
-| License | Apache-2.0 |
+| License | MIT |
 
 Do not treat a deployed demo token, an HTS receipt, or a topic message as an assignment of a receivable, a perfected lien, or UCC Article 12 control.
 
@@ -270,4 +270,4 @@ Threat details for the activation batch live in `THREAT_MODEL.md`. Key handling,
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).
