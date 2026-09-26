@@ -3,6 +3,7 @@ import {
   BatchTransaction,
   ContractExecuteTransaction,
   Hbar,
+  TokenMintTransaction,
   TopicMessageSubmitTransaction,
   TransferTransaction,
 } from "@hiero-ledger/sdk";
@@ -21,6 +22,9 @@ export const ADVANCE_TOKEN_UNITS = 1_572_500n;
  * A rolled-back transfer has to be a transfer that could otherwise succeed.
  */
 export const TREASURY_SUPPLY_UNITS = ADVANCE_TOKEN_UNITS * 4n;
+
+/** Public NFT metadata label. This receipt is not an assignment and not a lien. */
+export const RECEIPT_METADATA_LABEL = "operational-receipt-not-title";
 
 const INNER_FEE_CEILING = new Hbar(5);
 const ACTIVATE_GAS = 500_000;
@@ -43,6 +47,7 @@ export interface ActivationBatchInput {
   contractId: string;
   topicId: string;
   tokenId: string;
+  receiptTokenId: string;
   factorAccountId: string;
   supplierAccountId: string;
   functionParameters: Uint8Array;
@@ -56,13 +61,15 @@ export interface ActivationBatchInput {
 
 export interface ActivationBatch {
   batch: BatchTransaction;
-  innerTransactionIds: [string, string, string];
+  innerTransactionIds: [string, string, string, string];
   evidence: Uint8Array;
+  receiptMetadata: Uint8Array;
   outerBytes: number;
 }
 
 /**
- * One HIP-551 batch: activate, then the evidence header, then the tUSDC advance.
+ * One HIP-551 batch: activate, the evidence header, the tUSDC advance, then one receipt mint.
+ * The mint goes to the factor because the factor is the NFT treasury. The kernel does not read it.
  * The public header's holder field is zero. The contract stores the holder.
  * If the outer transaction would exceed the cap, this throws and returns nothing.
  */
@@ -73,6 +80,7 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
   requireHederaId(input.contractId, "contractId");
   requireHederaId(input.topicId, "topicId");
   requireHederaId(input.tokenId, "tokenId");
+  requireHederaId(input.receiptTokenId, "receiptTokenId");
   requireHederaId(input.factorAccountId, "factorAccountId");
   requireHederaId(input.supplierAccountId, "supplierAccountId");
   if (input.functionParameters.length < 4) {
@@ -111,6 +119,11 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
     .addTokenTransferWithDecimals(input.tokenId, input.factorAccountId, -ADVANCE_TOKEN_UNITS, TUSDC_DECIMALS)
     .addTokenTransferWithDecimals(input.tokenId, input.supplierAccountId, ADVANCE_TOKEN_UNITS, TUSDC_DECIMALS)
     .setMaxTransactionFee(INNER_FEE_CEILING);
+  const receiptMetadata = operationalReceiptMetadata(input.obligationId);
+  const receipt = new TokenMintTransaction()
+    .setTokenId(input.receiptTokenId)
+    .setMetadata([receiptMetadata])
+    .setMaxTransactionFee(INNER_FEE_CEILING);
 
   await activate.batchify(input.client, batchPublicKey);
   await topic.batchify(input.client, batchPublicKey);
@@ -118,8 +131,9 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
     await topic.sign(input.submitKey);
   }
   await advance.batchify(input.client, batchPublicKey);
+  await receipt.batchify(input.client, batchPublicKey);
 
-  const inners: [Transaction, Transaction, Transaction] = [activate, topic, advance];
+  const inners: [Transaction, Transaction, Transaction, Transaction] = [activate, topic, advance, receipt];
   const batch = new BatchTransaction().setMaxTransactionFee(INNER_FEE_CEILING);
   for (const inner of inners) {
     batch.addInnerTransaction(inner);
@@ -140,7 +154,7 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
     }
     return id.toString();
   });
-  if (new Set(ids).size !== 3) {
+  if (new Set(ids).size !== 4) {
     throw new Error("Inner transaction ids must be distinct");
   }
   const factorPayer = AccountId.fromString(input.factorAccountId).toString();
@@ -152,10 +166,26 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
 
   return {
     batch,
-    innerTransactionIds: [ids[0] ?? "", ids[1] ?? "", ids[2] ?? ""],
+    innerTransactionIds: [ids[0] ?? "", ids[1] ?? "", ids[2] ?? "", ids[3] ?? ""],
     evidence,
+    receiptMetadata,
     outerBytes,
   };
+}
+
+export function operationalReceiptMetadata(obligationId: string): Uint8Array {
+  const hexText = obligationId.startsWith("0x") ? obligationId.slice(2) : obligationId;
+  if (!/^[0-9a-fA-F]{64}$/.test(hexText)) {
+    throw new Error("obligationId must be 32 bytes");
+  }
+  const label = new TextEncoder().encode(RECEIPT_METADATA_LABEL);
+  const metadata = new Uint8Array(32 + label.length);
+  metadata.set(Uint8Array.from(Buffer.from(hexText, "hex")), 0);
+  metadata.set(label, 32);
+  if (metadata.length > 100) {
+    throw new Error("Receipt metadata exceeds the HTS metadata limit");
+  }
+  return metadata;
 }
 
 function requireHederaId(value: string, name: string): void {
