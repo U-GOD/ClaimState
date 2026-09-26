@@ -12,6 +12,7 @@ coverage/
 # Secrets and local environment
 .env
 .env.*
+.env.local
 !.env.example
 
 # Private commercial facts. Invoice bodies, names, and bank details stay here.
@@ -19,6 +20,9 @@ data/private/
 
 # Harness run output
 .harness/runs/
+.harness/skills/
+.harness/runtime/
+.skill-cache/
 
 # Local planning documents. These are not part of the published tree.
 IMPLEMENTATION.md
