@@ -1,0 +1,36 @@
+{
+  "assertions": [
+    {
+      "id": "C1",
+      "statement": "Committed fixtures do not contain a plaintext invoice number, a bank account, or a customer name.",
+      "howToVerify": "Open adapters/mock-payment-agent/fixtures/freight-18500.json. Confirm it has amounts and opaque references only.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C2",
+      "statement": "A second reservation fails closed. The demo shows ALREADY_RESERVED and does not show the current holder.",
+      "howToVerify": "Open /demo. Find the Second factor step. Read ALREADY_RESERVED and Holder not shown.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C3",
+      "statement": "A signed transition is visible as a role, a version, and a terms root, while the local commercial facts stay in the other column.",
+      "howToVerify": "Open /demo. On Broker confirms, read the buyer role and terms root in the decoded header, and the freight label in the local store.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C4",
+      "statement": "Recovery copy is visible. The page does not tell the reader that a token assigns a receivable.",
+      "howToVerify": "Open /demo and confirm the seven step titles render. Confirm the page does not say that an HTS token assigns a receivable. LEGAL_BOUNDARIES.md says the receipt is not an assignment and not a lien.",
+      "severity": "major",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    }
+  ]
+}
