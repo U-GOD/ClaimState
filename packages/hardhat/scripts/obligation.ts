@@ -19,8 +19,10 @@ import {
   amountCommitment,
   buildActivationBatch,
   commercialFieldBytes,
+  decodeEvidenceHeader,
   domainSeparator,
   encodeEvidenceHeader,
+  EVENT_TYPE_CODE,
   hmacFingerprintProvider,
   holderIsUndisclosed,
   obligationId as obligationIdOf,
@@ -29,7 +31,7 @@ import {
   type ActivationBatch,
   type ClaimEvent,
 } from "@claimstate/sdk";
-import { requireOperatorEnv, type DemoAccounts, type DeploymentManifest } from "./session.js";
+import { mirrorBase, requireOperatorEnv, type DemoAccounts, type DeploymentManifest } from "./session.js";
 
 const FACE_AMOUNT_CENTS = 1_850_000n;
 const DUE_DATE = "2026-12-31";
@@ -130,6 +132,19 @@ export async function openAcknowledged(
     dueDate: dueUnix,
   };
   const evidenceSteps: EvidenceStep[] = [];
+  const existing = await readEnvelope(client, manifest.contractId, id);
+  const alreadyAcknowledged =
+    existing.state === BigInt(STATE_CODE.ACKNOWLEDGED) && existing.version === 2n;
+  if (existing.version !== 0n && !alreadyAcknowledged) {
+    throw new Error(
+      `The freight obligation is already open at version ${existing.version.toString()}. Deploy again to start a new envelope.`,
+    );
+  }
+  if (alreadyAcknowledged) {
+    if (options?.publishEvidence) {
+      evidenceSteps.push(...(await openingMessages(manifest.topicId, id)));
+    }
+  } else {
   await execute(
     client,
     manifest.contractId,
@@ -209,6 +224,7 @@ export async function openAcknowledged(
       ),
     );
   }
+  }
 
   const activated: ClaimEvent = {
     eventType: "Activate",
@@ -240,6 +256,54 @@ export async function openAcknowledged(
       ]),
     ),
   };
+}
+
+async function openingMessages(topicId: string, obligationId: string): Promise<EvidenceStep[]> {
+  const found = new Map<string, EvidenceStep>();
+  let next = `/api/v1/topics/${topicId}/messages?limit=100&order=asc`;
+  const base = mirrorBase();
+  for (let page = 0; page < 5 && next.length > 0; page += 1) {
+    const response = await fetch(`${base}${next}`);
+    if (!response.ok) {
+      throw new Error(`Mirror topic read failed with HTTP ${response.status}`);
+    }
+    const body = (await response.json()) as {
+      messages?: Array<{ sequence_number: number; message: string }>;
+      links?: { next?: string | null };
+    };
+    for (const row of body.messages ?? []) {
+      const bytes = Uint8Array.from(Buffer.from(row.message, "base64"));
+      if (bytes.length !== 129) {
+        continue;
+      }
+      const decoded = decodeEvidenceHeader(bytes);
+      if (decoded.obligationId.toLowerCase() !== obligationId.toLowerCase()) {
+        continue;
+      }
+      const name =
+        decoded.eventType === EVENT_TYPE_CODE.Create
+          ? "create"
+          : decoded.eventType === EVENT_TYPE_CODE.Acknowledge
+            ? "acknowledge"
+            : "";
+      if (name.length === 0 || found.has(name)) {
+        continue;
+      }
+      found.set(name, {
+        name,
+        sequenceNumber: String(row.sequence_number),
+        evidenceBase64: row.message,
+      });
+    }
+    const link = body.links?.next ?? "";
+    next = link.startsWith(base) ? link.slice(base.length) : link.startsWith("/") ? link : "";
+  }
+  const create = found.get("create");
+  const acknowledge = found.get("acknowledge");
+  if (create === undefined || acknowledge === undefined) {
+    throw new Error("The acknowledged obligation has no create and acknowledge messages on the topic");
+  }
+  return [create, acknowledge];
 }
 
 export function activateCalldata(input: {
@@ -321,9 +385,54 @@ export async function readEnvelope(
 }
 
 export async function tokenUnits(client: Client, accountId: string, tokenId: string): Promise<bigint> {
-  const balance = await new AccountBalanceQuery().setAccountId(accountId).execute(client);
-  const row = balance.toJSON().tokens.find((entry) => entry.tokenId === tokenId);
-  return row === undefined ? 0n : BigInt(row.balance);
+  try {
+    const balance = await new AccountBalanceQuery()
+      .setAccountId(accountId)
+      .setMaxAttempts(2)
+      .execute(client);
+    const row = balance.toJSON().tokens.find((entry) => entry.tokenId === tokenId);
+    return row === undefined ? 0n : BigInt(row.balance);
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes("BUSY")) {
+      throw error;
+    }
+    return tokenUnitsFromRpc(accountId, tokenId);
+  }
+}
+
+/** CryptoGetAccountBalance is throttled separately from contract calls on testnet. */
+async function tokenUnitsFromRpc(accountId: string, tokenId: string): Promise<bigint> {
+  const rpc = process.env.HEDERA_RPC_URL ?? "https://testnet.hashio.io/api";
+  const holder = longZeroAddress(accountId).slice(2).padStart(64, "0");
+  const response = await fetch(rpc, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_call",
+      params: [{ to: longZeroAddress(tokenId), data: `0x70a08231${holder}` }, "latest"],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Token balance call failed with HTTP ${response.status}`);
+  }
+  const body = (await response.json()) as { result?: string; error?: { message?: string } };
+  if (body.error !== undefined) {
+    throw new Error(body.error.message ?? "Token balance call failed");
+  }
+  if (typeof body.result !== "string" || !/^0x[0-9a-fA-F]+$/.test(body.result)) {
+    throw new Error("Token balance call returned no quantity");
+  }
+  return BigInt(body.result);
+}
+
+function longZeroAddress(entityId: string): string {
+  const parts = entityId.split(".");
+  if (parts.length !== 3 || !/^\d+$/.test(parts[2] ?? "")) {
+    throw new Error(`Cannot derive an EVM address from ${entityId}`);
+  }
+  return `0x${BigInt(parts[2]).toString(16).padStart(40, "0")}`;
 }
 
 export async function mintSerial(client: Client, transactionId: string): Promise<number> {
@@ -387,7 +496,7 @@ export async function submitBatch(batch: ActivationBatch, client: Client): Promi
       status,
       transactionId,
       feeTinybars: record.transactionFee.toTinybars().toString(),
-      topicSequenceNumber: await innerTopicSequence(client, batch.innerTransactionIds[1]),
+      topicSequenceNumber: await innerTopicSequence(client, batch.innerTransactionIds[0]),
     };
   } catch (error) {
     if (!(error instanceof ReceiptStatusError)) {
