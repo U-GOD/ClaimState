@@ -33,6 +33,7 @@ let kernelContract: Contract | undefined;
 
 interface World {
   kernel: Contract;
+  pegFeed: Contract;
   kernelAccount: Signer;
   supplier: HDNodeWallet;
   buyer: HDNodeWallet;
@@ -57,15 +58,18 @@ describe("ClaimStateKernel", function () {
     const otherFactor = ethers.Wallet.createRandom();
     const paymentAgent = ethers.Wallet.createRandom();
     const executor = ethers.Wallet.createRandom();
+    const pegFeed = await ethers.deployContract("FixedPegFeed", [8]);
+    await pegFeed.waitForDeployment();
     const kernel = await ethers.deployContract(
       "ClaimStateKernel",
-      [TOPIC_ID, "testnet", kernelAccount.address],
+      [TOPIC_ID, "testnet", kernelAccount.address, await pegFeed.getAddress()],
       relayer,
     );
     const registry = await kernel.getAddress();
     kernelContract = kernel;
     world = {
       kernel,
+      pegFeed,
       kernelAccount,
       supplier,
       buyer,
@@ -127,6 +131,28 @@ describe("ClaimStateKernel", function () {
     const env = await read(world, obligation);
     expect(env.state).to.equal(BigInt(STATE_CODE.RESERVED));
     expect(env.factor).to.equal(world.factor.address);
+    expect(env.version).to.equal(version + 1n);
+  });
+
+  it("rejects activation when the dollar feed is stale or off peg and keeps the event id", async function () {
+    const obligation = await acknowledged(world);
+    const version = (await read(world, obligation)).version;
+    const id = eventId();
+    const stale = BigInt((await ethers.provider.getBlock("latest"))?.timestamp ?? 0) - 50n * 60n * 60n;
+    await world.pegFeed.set(100_000_000n, stale);
+    await expect(sendActivate(world, obligation, world.factor, id, version)).to.be.revertedWithCustomError(
+      world.kernel,
+      "PriceUnavailable",
+    );
+    await world.pegFeed.set(90_000_000n, BigInt((await ethers.provider.getBlock("latest"))?.timestamp ?? 0));
+    await expect(sendActivate(world, obligation, world.factor, id, version)).to.be.revertedWithCustomError(
+      world.kernel,
+      "PriceUnavailable",
+    );
+    await world.pegFeed.set(100_000_000n, BigInt((await ethers.provider.getBlock("latest"))?.timestamp ?? 0));
+    await (await sendActivate(world, obligation, world.factor, id, version)).wait();
+    const env = await read(world, obligation);
+    expect(env.state).to.equal(BigInt(STATE_CODE.RESERVED));
     expect(env.version).to.equal(version + 1n);
   });
 
