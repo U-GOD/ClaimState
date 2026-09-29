@@ -14,12 +14,13 @@ The research that selected this protocol is [docs/hedera-financial-infrastructur
 |---|---|
 | Protocol decision | Written |
 | Workspace skeleton and written invariants | Written |
-| Off-chain state machine and commitments | Tested, no network |
-| `ClaimStateKernel` | Local tests. Testnet deploy waits on an operator key |
-| Activation batch | Built, including the receipt mint. Testnet funding waits on the same operator key |
-| Servicing | Credit note, payment, release, dispute, and delinquency schedule are scripted. Testnet still waits on the operator key |
-| Indexer and demo UI | Read model and `/demo`. A funded topic still waits on the operator key |
-| Scaffold and harness | Recipe, validators, and `SECURITY.md` are in the tree. A funded harness run still waits on the operator key |
+| Off-chain state machine and commitments | Tested locally |
+| `ClaimStateKernel` | On Hedera testnet at [0.0.10743893](https://hashscan.io/testnet/contract/0.0.10743893). `activate` reads Chainlink USDC/USD. |
+| Activation batch | Funded on testnet. Evidence, advance, receipt mint, then the contract call. Supplier balance `1572500` tUSDC units. |
+| Servicing | Happy path reached `RELEASED` at version 7. Mirror Node matches sequences 1 through 7 on [topic 0.0.10743885](https://hashscan.io/testnet/topic/0.0.10743885). |
+| Indexer and demo UI | Local read model at `/demo`. The funded topic is the HashScan link above. |
+| Scaffold and harness | Recipe and validators are in the tree. `hedera-harness validate` passed locally. |
+| Chainlink USDC/USD | [0.0.4873353](https://hashscan.io/testnet/contract/0.0.4873353). Kernel `quoteDollar` returned price `99985881` (8 decimals). |
 | Target network | Hedera testnet, chain id 296 |
 | License | MIT |
 
@@ -51,7 +52,7 @@ The envelope is evidence and coordination among participants. Priority against t
 
 ## Architecture
 
-Private systems canonicalize the obligation and keep the document. One Solidity entrypoint, `ClaimStateKernel`, is the only contract call inside the funding batch. Hedera Consensus Service orders the evidence. A demo HTS fungible token, `tUSDC`, moves the advance on testnet. The Schedule Service arms a due-date delinquency check after funding, because a HIP-551 batch cannot contain a scheduled transaction. Mirror Node is the read model and lags consensus by a few seconds.
+Private systems canonicalize the obligation and keep the document. One Solidity entrypoint, `ClaimStateKernel`, is the only contract call inside the funding batch. That call reads Chainlink USDC/USD before it reserves the obligation. If the dollar feed is stale or off peg, the call reverts and the advance, the evidence message, and the receipt mint roll back with it. Hedera Consensus Service orders the evidence. A demo HTS fungible token, `tUSDC`, moves the advance on testnet. The Schedule Service arms a due-date delinquency check after funding, because a HIP-551 batch cannot contain a scheduled transaction. Mirror Node is the read model and lags consensus by a few seconds.
 
 ```mermaid
 flowchart LR
@@ -196,12 +197,13 @@ actionDigest       = keccak256(domain, eventType, obligationId, expectedVersion,
 
 | Service | Role in ClaimState |
 |---|---|
-| Smart Contract Service | `ClaimStateKernel` enforces the transition table, version, and signatures. |
-| HIP-551 batch | Binds activation, HCS evidence, and the `tUSDC` advance. |
+| Smart Contract Service | `ClaimStateKernel` enforces the transition table, version, and signatures. `activate` also reads Chainlink USDC/USD and reverts `PriceUnavailable` when that feed is missing, older than 48 hours, or more than 2 percent away from $1. |
+| HIP-551 batch | Binds the evidence header, the `tUSDC` advance, the receipt mint, and one final contract call. The contract call is last because a batch may contain only one, and only in that position. |
 | Consensus Service | Public, ordered evidence header. A submit key restricts writers, not readers. |
 | Token Service | Demo advance, plus one NFT receipt minted in the same activation batch. Metadata is the obligation id and `operational-receipt-not-title`. Burning that NFT does not release the reservation. |
 | Schedule Service | One-shot `markDelinquent` at the due date. There is no native repeating schedule. |
 | Mirror Node | Indexed read model after consensus. Not the write-path source of truth. |
+| Chainlink | USDC/USD on Hedera testnet (`0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5`). The funding batch cannot reserve or disburse without it. This is a dollar reference for the stablecoin advance, not a valuation of the invoice. |
 
 HBAR amounts in the SDK use 8 decimals. `tUSDC` uses 2. Do not reuse Ethereum's 18-decimal assumption. Public Hashio is a development JSON-RPC endpoint. Scripts will accept `HEDERA_RPC_URL` and must not treat Hashio as a production dependency.
 
