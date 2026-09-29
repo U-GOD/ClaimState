@@ -27,7 +27,7 @@ export const TREASURY_SUPPLY_UNITS = ADVANCE_TOKEN_UNITS * 4n;
 export const RECEIPT_METADATA_LABEL = "operational-receipt-not-title";
 
 const INNER_FEE_CEILING = new Hbar(5);
-const ACTIVATE_GAS = 500_000;
+const ACTIVATE_GAS = 800_000;
 
 export class BatchTooLargeError extends Error {
   readonly outerBytes: number;
@@ -68,7 +68,8 @@ export interface ActivationBatch {
 }
 
 /**
- * One HIP-551 batch: activate, the evidence header, the tUSDC advance, then one receipt mint.
+ * One HIP-551 batch: the evidence header, the tUSDC advance, one receipt mint, then activate.
+ * The contract call is last. A batch may contain one contract call, and only in the final position.
  * The mint goes to the factor because the factor is the NFT treasury. The kernel does not read it.
  * The public header's holder field is zero. The contract stores the holder.
  * If the outer transaction would exceed the cap, this throws and returns nothing.
@@ -125,15 +126,15 @@ export async function buildActivationBatch(input: ActivationBatchInput): Promise
     .setMetadata([receiptMetadata])
     .setMaxTransactionFee(INNER_FEE_CEILING);
 
-  await activate.batchify(input.client, batchPublicKey);
   await topic.batchify(input.client, batchPublicKey);
   if (input.submitKey !== undefined) {
     await topic.sign(input.submitKey);
   }
   await advance.batchify(input.client, batchPublicKey);
   await receipt.batchify(input.client, batchPublicKey);
+  await activate.batchify(input.client, batchPublicKey);
 
-  const inners: [Transaction, Transaction, Transaction, Transaction] = [activate, topic, advance, receipt];
+  const inners: [Transaction, Transaction, Transaction, Transaction] = [topic, advance, receipt, activate];
   const batch = new BatchTransaction().setMaxTransactionFee(INNER_FEE_CEILING);
   for (const inner of inners) {
     batch.addInnerTransaction(inner);
