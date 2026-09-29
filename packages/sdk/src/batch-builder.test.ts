@@ -99,11 +99,11 @@ test("the activation batch binds the contract call, the header, and the advance"
 
     const inners = built.batch.innerTransactions;
     assert.equal(inners.length, 4);
-    assert.ok(inners[0] instanceof ContractExecuteTransaction);
-    assert.ok(inners[1] instanceof TopicMessageSubmitTransaction);
-    assert.ok(inners[2] instanceof TransferTransaction);
-    assert.ok(inners[3] instanceof TokenMintTransaction);
-    const minted = (inners[3] as TokenMintTransaction).metadata;
+    assert.ok(inners[0] instanceof TopicMessageSubmitTransaction);
+    assert.ok(inners[1] instanceof TransferTransaction);
+    assert.ok(inners[2] instanceof TokenMintTransaction);
+    assert.ok(inners[3] instanceof ContractExecuteTransaction);
+    const minted = (inners[2] as TokenMintTransaction).metadata;
     assert.equal(minted.length, 1);
     assert.deepEqual(minted[0], operationalReceiptMetadata(obligationId));
     assert.ok(Buffer.from(minted[0] ?? []).includes(Buffer.from(RECEIPT_METADATA_LABEL)));
@@ -112,7 +112,7 @@ test("the activation batch binds the contract call, the header, and the advance"
       assert.equal(inner.batchKey?.toString(), batchKeyText);
     }
 
-    const message = (inners[1] as TopicMessageSubmitTransaction).getMessage();
+    const message = (inners[0] as TopicMessageSubmitTransaction).getMessage();
     assert.ok(message !== null);
     assert.deepEqual(message, built.evidence);
     assert.equal(holderIsUndisclosed(message), true);
@@ -120,7 +120,7 @@ test("the activation batch binds the contract call, the header, and the advance"
     assert.equal(decoded.version, 3n);
     assert.equal(decoded.newState, STATE_CODE.RESERVED);
 
-    const transfers = (inners[2] as TransferTransaction).tokenTransfers._toProtobuf();
+    const transfers = (inners[1] as TransferTransaction).tokenTransfers._toProtobuf();
     const amounts = transfers.flatMap((entry) => entry.transfers ?? []).map((entry) => entry.amount?.toString());
     assert.deepEqual(amounts.sort(), [(-ADVANCE_TOKEN_UNITS).toString(), ADVANCE_TOKEN_UNITS.toString()].sort());
   } finally {
