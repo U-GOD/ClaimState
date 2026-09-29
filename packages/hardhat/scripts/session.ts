@@ -28,6 +28,7 @@ export interface DeploymentManifest {
   factorAccountId: string;
   supplierAccountId: string;
   buyerAccountId: string;
+  chainlinkUsdcUsd: string;
 }
 
 export interface DemoAccount {
