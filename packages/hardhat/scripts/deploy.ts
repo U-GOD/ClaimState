@@ -9,7 +9,7 @@ import {
   TopicCreateTransaction,
 } from "@hiero-ledger/sdk";
 import type { Client } from "@hiero-ledger/sdk";
-import { Wallet } from "ethers";
+import { Interface, Wallet } from "ethers";
 import { network } from "hardhat";
 import { TREASURY_SUPPLY_UNITS, TUSDC_DECIMALS, ADVANCE_TOKEN_UNITS } from "@claimstate/sdk";
 import {
@@ -26,10 +26,16 @@ import {
 
 const MIRROR_WAIT_MS = 90_000;
 const MIRROR_POLL_MS = 3_000;
+/** Chainlink USDC/USD on Hedera testnet. Activation reverts without a fresh peg. */
+const CHAINLINK_USDC_USD = "0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5";
+const PEG_TARGET = 100_000_000n;
+const PEG_BAND = 2_000_000n;
+const MAX_FEED_AGE_SECONDS = 48n * 60n * 60n;
 
 await deploy();
 
 async function deploy(): Promise<void> {
+  await assertLiveDollarFeed();
   const { privateKey } = requireOperatorEnv();
   const kernelAddress = new Wallet(rawHex(privateKey)).address;
   const client = operatorClient();
@@ -63,7 +69,7 @@ async function deploy(): Promise<void> {
     const { ethers } = await network.create("hederaTestnet");
     const kernel = await ethers.deployContract(
       "ClaimStateKernel",
-      [topicId, "testnet", kernelAddress],
+      [topicId, "testnet", kernelAddress, CHAINLINK_USDC_USD],
       { gasLimit: 4_000_000n },
     );
     await kernel.waitForDeployment();
@@ -98,10 +104,52 @@ async function deploy(): Promise<void> {
       factorAccountId: factor.accountId,
       supplierAccountId: supplier.accountId,
       buyerAccountId: buyer.accountId,
+      chainlinkUsdcUsd: CHAINLINK_USDC_USD,
     });
+    console.log(`chainlinkUsdcUsd: ${CHAINLINK_USDC_USD}`);
   } finally {
     client.close();
   }
+}
+
+async function assertLiveDollarFeed(): Promise<void> {
+  const rpc = process.env.HEDERA_RPC_URL ?? "https://testnet.hashio.io/api";
+  const feed = new Interface([
+    "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+    "function decimals() view returns (uint8)",
+  ]);
+  const round = await ethCall(rpc, feed, "latestRoundData");
+  const decimals = await ethCall(rpc, feed, "decimals");
+  const answer = BigInt(String(round[1]));
+  const updatedAt = BigInt(String(round[3]));
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  if (Number(decimals[0] as number | bigint) !== 8 || answer <= 0n || updatedAt === 0n || now < updatedAt) {
+    throw new Error("Chainlink USDC/USD is not a usable 8-decimal dollar feed");
+  }
+  if (now - updatedAt > MAX_FEED_AGE_SECONDS || answer < PEG_TARGET - PEG_BAND || answer > PEG_TARGET + PEG_BAND) {
+    throw new Error("Chainlink USDC/USD is stale or off the dollar peg, so activation would revert");
+  }
+}
+
+async function ethCall(rpc: string, feed: Interface, name: "latestRoundData" | "decimals"): Promise<readonly unknown[]> {
+  const response = await fetch(rpc, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_call",
+      params: [{ to: CHAINLINK_USDC_USD, data: feed.encodeFunctionData(name) }, "latest"],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Chainlink read failed with HTTP ${response.status}`);
+  }
+  const body = (await response.json()) as { result?: string; error?: { message?: string } };
+  if (body.error !== undefined || typeof body.result !== "string" || body.result === "0x") {
+    throw new Error(body.error?.message ?? "Chainlink USDC/USD returned no price");
+  }
+  return feed.decodeFunctionResult(name, body.result);
 }
 
 async function createAccount(client: Client, key: PrivateKey, hbar: number): Promise<DemoAccount> {
