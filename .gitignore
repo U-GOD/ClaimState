@@ -27,6 +27,7 @@ data/private/
 # Local planning documents. These are not part of the published tree.
 IMPLEMENTATION.md
 task.md
+EXPLANATION.md
 
 # Logs and OS files
 *.log
