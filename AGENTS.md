@@ -18,6 +18,7 @@ The reference workflow is one U.S. transportation factor financing a buyer-confi
 10. A submit key on an HCS topic restricts writers. The message bytes remain public. Publish commitments only.
 11. HBAR amounts in the SDK use 8 decimals. The demo stablecoin uses its own decimals and must not inherit Ethereum's 18.
 12. Public Hashio is for development only. Scripts accept `HEDERA_RPC_URL` and default to Hashio solely for local demo.
+13. `activate` reads the Chainlink USDC/USD feed. A missing, stale, or off-peg price reverts `PriceUnavailable` and rolls the funding batch back. The error returns no holder. Do not remove that call.
 
 ## State machine
 
