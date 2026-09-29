@@ -42,7 +42,7 @@ async function demo(): Promise<void> {
     if (!outcome.success || outcome.topicSequenceNumber === null) {
       throw new Error(`Activation batch status ${outcome.status}`);
     }
-    const serial = await mintSerial(operator, built.innerTransactionIds[3]);
+    const serial = await mintSerial(operator, built.innerTransactionIds[2]);
     const reserved = await readEnvelope(operator, manifest.contractId, opened.obligationId);
     assertReserved(reserved, accounts.factor.evmAddress);
     const after = await tokenUnits(operator, manifest.supplierAccountId, manifest.tokenId);
