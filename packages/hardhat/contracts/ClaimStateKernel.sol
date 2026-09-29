@@ -4,6 +4,15 @@ pragma solidity 0.8.28;
 import {SignatureLib} from "./libraries/SignatureLib.sol";
 import {TransitionLib} from "./libraries/TransitionLib.sol";
 
+interface AggregatorV3Interface {
+    function decimals() external view returns (uint8);
+
+    function latestRoundData()
+        external
+        view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+}
+
 /// Obligation state envelope. Not a lien, not Article 12 control, and not an assignment.
 /// Authorization is an ECDSA signature over actionDigest. msg.sender pays gas and is not the signer.
 contract ClaimStateKernel {
@@ -29,6 +38,8 @@ contract ClaimStateKernel {
     error BeforeDueDate();
     error TermsMismatch();
     error InvalidEvent();
+    /// Chainlink USDC/USD was missing, stale, or off the dollar peg. No holder is returned.
+    error PriceUnavailable();
 
     event Transition(bytes32 indexed obligationId, uint64 version, uint8 previousState, uint8 newState);
 
@@ -45,24 +56,29 @@ contract ClaimStateKernel {
 
     string public constant DOMAIN_TAG = "ClaimState/v1";
     uint256 public constant SCHEMA_VERSION = 1;
+    uint256 public constant PEG_TARGET = 1e8;
+    uint256 public constant PEG_BAND = 2e6;
+    uint256 public constant MAX_FEED_AGE = 48 hours;
 
     string public topicId;
     string public networkLabel;
     address public immutable kernel;
+    address public immutable usdcUsdFeed;
 
     mapping(bytes32 obligationId => Envelope) public envelopes;
     mapping(bytes32 obligationId => address executor) public scheduledExecutors;
     mapping(bytes32 obligationId => mapping(bytes32 eventId => bool)) public consumedEvents;
 
-    constructor(string memory topicId_, string memory networkLabel_, address kernel_) {
+    constructor(string memory topicId_, string memory networkLabel_, address kernel_, address usdcUsdFeed_) {
         if (block.chainid != 296 && block.chainid != 295) revert InvalidEvent();
         if (!_isTopicId(topicId_)) revert InvalidEvent();
         bytes32 label = keccak256(bytes(networkLabel_));
         if (label != keccak256("testnet") && label != keccak256("mainnet")) revert InvalidEvent();
-        if (kernel_ == address(0)) revert InvalidEvent();
+        if (kernel_ == address(0) || usdcUsdFeed_ == address(0)) revert InvalidEvent();
         topicId = topicId_;
         networkLabel = networkLabel_;
         kernel = kernel_;
+        usdcUsdFeed = usdcUsdFeed_;
     }
 
     function domainSeparator() public view returns (bytes32) {
@@ -167,7 +183,41 @@ contract ClaimStateKernel {
         );
         _requireSigner(digest, supplierSignature, env.supplier);
         _requireSigner(digest, factorSignature, factor);
+        quoteDollar();
         _commit(obligationId, env, eventId, TransitionLib.RESERVED, factor);
+    }
+
+    /// Chainlink USDC/USD with 8 decimals. Activation reverts unless this is within 2 percent of $1 and no older than 48 hours.
+    function quoteDollar() public view returns (uint256 price, uint256 updatedAt) {
+        (uint80 roundId, int256 answer, uint256 feedUpdatedAt, uint80 answeredInRound) = _round();
+        if (roundId == 0 || answeredInRound < roundId || answer <= 0 || feedUpdatedAt == 0) revert PriceUnavailable();
+        if (feedUpdatedAt > block.timestamp || block.timestamp - feedUpdatedAt > MAX_FEED_AGE) revert PriceUnavailable();
+        if (_feedDecimals() != 8) revert PriceUnavailable();
+        price = uint256(answer);
+        if (price < PEG_TARGET - PEG_BAND || price > PEG_TARGET + PEG_BAND) revert PriceUnavailable();
+        updatedAt = feedUpdatedAt;
+    }
+
+    function _round()
+        internal
+        view
+        returns (uint80 roundId, int256 answer, uint256 feedUpdatedAt, uint80 answeredInRound)
+    {
+        try AggregatorV3Interface(usdcUsdFeed).latestRoundData() returns (
+            uint80 roundId_, int256 answer_, uint256, uint256 updatedAt_, uint80 answeredInRound_
+        ) {
+            return (roundId_, answer_, updatedAt_, answeredInRound_);
+        } catch {
+            revert PriceUnavailable();
+        }
+    }
+
+    function _feedDecimals() internal view returns (uint8) {
+        try AggregatorV3Interface(usdcUsdFeed).decimals() returns (uint8 decimals_) {
+            return decimals_;
+        } catch {
+            revert PriceUnavailable();
+        }
     }
 
     function creditNote(
