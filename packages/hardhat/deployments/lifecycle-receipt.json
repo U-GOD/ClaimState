@@ -1,0 +1,50 @@
+{
+  "network": "hedera-testnet",
+  "chainId": 296,
+  "obligationId": "0xafe923623f1455a4833db0e1f41c62548a8e5c41f8032216d2286bb126a15597",
+  "contractId": "0.0.10743893",
+  "topicId": "0.0.10743885",
+  "tokenId": "0.0.10743886",
+  "supplierAccountId": "0.0.10743883",
+  "supplierBalanceAfter": "1572500",
+  "advanceUnits": "1572500",
+  "state": "RELEASED",
+  "version": "7",
+  "steps": [
+    {
+      "name": "create",
+      "sequenceNumber": "1",
+      "evidenceBase64": "AQGv6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAABAAHAfIRhxKElU0a98RIBjyGYVVsD3/WHix5QDWo/G2QqLu6K0oMzCwoEu9W1N95zeDQkltmMxf598iUac9oguIpjAQAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "acknowledge",
+      "sequenceNumber": "2",
+      "evidenceBase64": "AQKv6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAACAQLAfIRhxKElU0a98RIBjyGYVVsD3/WHix5QDWo/G2QqLruTcrPTyHBreSHTIkM08oH/VfLnPXUwM4F6udqRdbJMAgAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "activate",
+      "sequenceNumber": "3",
+      "evidenceBase64": "AQOv6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAADAgPAfIRhxKElU0a98RIBjyGYVVsD3/WHix5QDWo/G2QqLuG0O1cAkNIh5JpRhKRZ/vy2qFtdrIfvh8sDMOhPg3leAwAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "creditNote",
+      "sequenceNumber": "4",
+      "evidenceBase64": "AQSv6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAAEAwN0Cmg7ZCgMwDuwUnhlIbwBAUfJ4lxBoxtoW/qqD2AFsiNeDTBS0uIwNJSn4AtYc8LhJ3+P0Yzn8npN466jjCO3AgAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "payment",
+      "sequenceNumber": "5",
+      "evidenceBase64": "AQev6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAAFAwN0Cmg7ZCgMwDuwUnhlIbwBAUfJ4lxBoxtoW/qqD2AFsl/Fk0cQXZdPGYzYrgt41H4YKaYuV2iR/oYpt1KsUnbABAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "payment",
+      "sequenceNumber": "6",
+      "evidenceBase64": "AQev6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAAGAwZ0Cmg7ZCgMwDuwUnhlIbwBAUfJ4lxBoxtoW/qqD2AFsgB75U1AiTRW14mz88eWZw1g/s15UljNHZKM8DHLuE58BAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "name": "release",
+      "sequenceNumber": "7",
+      "evidenceBase64": "AQqv6SNiPxRVpIM9sOH0HGJUio5cQfgDIhbSKGuxJqFVlwAAAAAAAAAHBgd0Cmg7ZCgMwDuwUnhlIbwBAUfJ4lxBoxtoW/qqD2AFsiJpTX6lisXmV+Hjn3EYiStBkwz1YeKWUW7aLonV9t6EAwAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  ]
+}

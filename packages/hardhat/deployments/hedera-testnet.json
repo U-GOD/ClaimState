@@ -1,0 +1,17 @@
+{
+  "network": "hedera-testnet",
+  "chainId": 296,
+  "topicId": "0.0.10743885",
+  "contractId": "0.0.10743893",
+  "contractEvmAddress": "0x999e9beaD2694E85a921c1D166792F30E396467e",
+  "kernel": "0x19FEeE9d59263BB2bE886af788aD5Ea998B13d70",
+  "tokenId": "0.0.10743886",
+  "receiptTokenId": "0.0.10743889",
+  "tokenDecimals": 2,
+  "advanceUnits": "1572500",
+  "treasurySupplyUnits": "6290000",
+  "factorAccountId": "0.0.10743882",
+  "supplierAccountId": "0.0.10743883",
+  "buyerAccountId": "0.0.10743884",
+  "chainlinkUsdcUsd": "0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5"
+}
