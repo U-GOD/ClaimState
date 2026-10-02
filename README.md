@@ -130,10 +130,11 @@ sequenceDiagram
 
   Supplier->>Kernel: Create envelope
   Buyer->>Kernel: Acknowledge terms root
-  Factor->>Kernel: Activate reservation
-  Kernel->>Topic: Evidence header
+  Factor->>Topic: Evidence header
   Factor->>Token: Advance to supplier
-  Note over Kernel,Token: These three effects are one HIP-551 batch
+  Factor->>Token: Mint operational receipt
+  Factor->>Kernel: Activate, contract call last
+  Note over Topic,Kernel: One HIP-551 batch. A bad dollar feed reverts activate and rolls all four back.
   Factor->>Schedule: Arm markDelinquent at due date
 ```
 
