@@ -1,58 +1,83 @@
 # ClaimState
 
-ClaimState is a shared evidence layer for private financial obligations. A supplier, a buyer, and a financier keep the commercial document off the ledger. Hedera records a signed, versioned state envelope: acknowledgement, one in-network financing reservation, amendments, dispute, payment, and release.
+A privacy-preserving obligation lifecycle and operational reservation engine built on Hedera.
 
-The reference workflow is a U.S. transportation factor financing a buyer-confirmed freight invoice. The kernel itself is asset-independent. A later adapter, such as a compute SLA or a performance bond, changes the evidence policy without changing the state machine.
+In supply chain finance and transportation factoring, commercial documents like invoices and bills of lading contain sensitive pricing, customer names, and bank details. ClaimState lets suppliers, buyers, and financiers keep those documents private while recording a cryptographically verified, versioned state machine directly on Hedera.
 
-This repository is the protocol specification and the Scaffold-HBAR template for that kernel. The off-chain state machine and commitments live in `packages/sdk`. `ClaimStateKernel` lives in `packages/hardhat`. The indexer and the demo UI live in `packages/indexer` and `packages/nextjs`.
-
-The research that selected this protocol is [docs/hedera-financial-infrastructure-research.canvas.tsx](docs/hedera-financial-infrastructure-research.canvas.tsx). Read that file before changing scope. It is a Cursor canvas: the same file is installed for the ClaimState workspace, and the copy in `docs/` is the reviewable source. It records the candidate set, the kill tests, the Hedera constraints, and the decision to ship an evidence envelope rather than a tokenized-invoice market.
-
-## Status
-
-| Item | State |
-|---|---|
-| Protocol decision | Written |
-| Workspace skeleton and written invariants | Written |
-| Off-chain state machine and commitments | Tested locally |
-| `ClaimStateKernel` | On Hedera testnet at [0.0.10743893](https://hashscan.io/testnet/contract/0.0.10743893). `activate` reads Chainlink USDC/USD. |
-| Activation batch | Funded on testnet. Evidence, advance, receipt mint, then the contract call. Supplier balance `1572500` tUSDC units. |
-| Servicing | Happy path reached `RELEASED` at version 7. Mirror Node matches sequences 1 through 7 on [topic 0.0.10743885](https://hashscan.io/testnet/topic/0.0.10743885). |
-| Indexer and demo UI | Local read model at `/demo`. The funded topic is the HashScan link above. |
-| Scaffold and harness | Recipe and validators are in the tree. `hedera-harness validate` passed locally. |
-| Chainlink USDC/USD | [0.0.4873353](https://hashscan.io/testnet/contract/0.0.4873353). Kernel `quoteDollar` returned price `99985881` (8 decimals). |
-| Target network | Hedera testnet, chain id 296 |
-| License | MIT |
-
-Do not treat a deployed demo token, an HTS receipt, or a topic message as an assignment of a receivable, a perfected lien, or UCC Article 12 control.
+Our reference implementation demonstrates a freight factoring workflow where a financier advances funds against a buyer-confirmed invoice. The core kernel is completely asset-agnostic: the same state machine can manage service level agreements, construction milestones, or performance bonds simply by swapping the evidence verification policy.
 
 ## The problem
 
-A financed invoice is not one record. The PDF sits in a carrier's transportation system. The broker confirms it by email or a portal. The factor checks for double financing in a separate service. Notices of assignment go to counsel. Short-pays, disputes, and collections are reconciled after the fact in the factor's own database.
+Financing an invoice is rarely as simple as handling a single document. In real-world freight and B2B trade, information lives in silos:
 
-Tokenizing the invoice does not repair that split. A token can move. It does not tell a second lender whether the buyer has acknowledged the amount, whether a credit note reduced it, or whether another financier already reserved it inside the participating network.
+- The original PDF invoice sits inside the carrier's Transportation Management System (TMS) or ERP.
+- The freight broker or buyer confirms the load over email or through an internal web portal.
+- The lender (factor) runs duplicate checks through specialized third-party services.
+- Legal notices of assignment are sent back and forth between attorneys.
+- Short-pays, billing disputes, and collection receipts get manually reconciled weeks later across disconnected spreadsheets and private databases.
 
-## What this protocol adds
+Simply turning the invoice into an NFT does not solve this problem. While an NFT can easily be transferred between wallets, it cannot tell a lender whether the buyer actually approved the invoice, whether a credit note reduced the amount owed, or whether another lender already financed the same receivable within the network.
 
-ClaimState adds two objects.
+## What ClaimState solves
 
-An **obligation state envelope** is a versioned commitment to terms, roles, and evidence. Parties sign state transitions. The ledger stores roots and hashes, not the invoice.
+ClaimState introduces two foundational primitives:
 
-An **operational reservation** is a single in-network financing slot on that envelope. The factor's reservation and the digital advance are submitted together. A second activation fails with `ALREADY_RESERVED` and does not reveal the current holder.
+1. **Obligation state envelope**: A versioned cryptographic container for commercial terms, participant roles, and signed lifecycle events. Instead of posting raw invoices or customer data on a public ledger, parties sign state transitions off-chain. Hedera stores Merkle roots and blind commitments, preserving business confidentiality while providing an immutable audit trail.
 
-The envelope is evidence and coordination among participants. Priority against the rest of the world still depends on governing law, notice, and any required filing. Those steps stay in jurisdiction adapters. They are not implied by a contract write.
+2. **Operational reservation**: A single, protected financing slot on that envelope. When a financier funds an invoice, their reservation lock and the digital payout occur together in a single atomic transaction batch. If a second financier attempts to fund the same invoice, the network rejects the transaction with `ALREADY_RESERVED` without leaking who holds the existing reservation.
 
-## What this protocol is not
+The state envelope coordinates workflow and evidence among participants. Legal priority, perfection of liens, and UCC filings still depend on governing law and formal notices; those steps are handled by external adapters rather than smart contract state alone.
 
-- It is not a factoring marketplace, a liquidity pool, or a protocol token.
-- It is not a duplicate-invoice utility. Production duplicate checks belong in an adapter such as MonetaGo.
-- It is not a legal registry. It cannot see a pledge made entirely outside participating systems.
-- It is not a private payments network. A public token transfer reveals the advance amount. Fiat collection is a later signed payment event, not an atomic bank transfer.
-- It does not replace Hedera Asset Tokenization Studio for securities issuance, coupons, or corporate actions.
+## What ClaimState is not
+
+To keep the protocol focused, secure, and legally sound, ClaimState defines strict scope boundaries:
+
+- **Not an open factoring marketplace or liquidity pool.** There is no automated market maker or native protocol token.
+- **Not a standalone duplicate-invoice registry.** Production duplicate detection relies on specialized off-chain adapters (such as MonetaGo).
+- **Not a global legal registry.** The contract cannot detect or stop a pledge made entirely outside participating systems.
+- **Not a private payments rail.** Token transfers on-chain reveal transaction amounts, and off-chain fiat settlement is handled via signed lifecycle events rather than atomic bank wire integration.
+- **Not an asset tokenization engine.** ClaimState coordinates obligations and evidence rather than issuing tokenized securities.
+
+## Quick start
+
+You can spin up a new project using the Scaffold-HBAR CLI or clone this repository directly:
+
+```bash
+npx create-scaffold-hbar@latest my-app --template U-GOD/ClaimState
+cd my-app
+cp .env.example .env.local          # add your testnet operator id and ECDSA key
+npm install
+npm run deploy:testnet               # deploy contract, topic, tUSDC, and receipt token
+npm run demo:obligation              # walk one obligation from DRAFT to RELEASED
+npm run verify:mirror                # confirm all 7 topic sequences on Mirror Node
+npm run dev                          # start the demo UI at http://localhost:3000
+```
+
+`npm install`, `npm run lint`, `npm test`, and `npm run dev` work out of the box without requiring operator credentials.
+
+To run the live testnet scripts (`deploy:testnet`, `demo:obligation`, `verify:mirror`), you will need a funded Hedera testnet account. You can grab free testnet HBAR directly from the [Hedera Portal faucet](https://portal.hedera.com/).
+
+## Testnet deployment
+
+The complete obligation lifecycle has been deployed and verified on the Hedera testnet (chain ID `296`).
+
+| Resource | Testnet ID | HashScan Explorer |
+|---|---|---|
+| ClaimStateKernel | `0.0.10743893` | [View contract](https://hashscan.io/testnet/contract/0.0.10743893) |
+| HCS evidence topic | `0.0.10743885` | [View topic](https://hashscan.io/testnet/topic/0.0.10743885) |
+| tUSDC advance token | `0.0.10743886` | [View token](https://hashscan.io/testnet/token/0.0.10743886) |
+| Operational receipt NFT | `0.0.10743889` | [View token](https://hashscan.io/testnet/token/0.0.10743889) |
+| Chainlink USDC/USD feed | `0.0.4873353` | [View contract](https://hashscan.io/testnet/contract/0.0.4873353) |
+
+In our end-to-end verification run, the full lifecycle reached `RELEASED` at version 7. All seven topic message sequences were confirmed through the Hedera Mirror Node. At activation, the Chainlink feed reported a live price of `99985881` (8 decimals, approximately $0.9999), satisfying the stablecoin peg check.
+
+> **Legal notice:** Holding a demo token, an HTS operational receipt, or an HCS topic message does not constitute an assignment of receivables, a perfected lien under commercial law, or UCC Article 12 controllable electronic record control. See [LEGAL_BOUNDARIES.md](LEGAL_BOUNDARIES.md) for detailed regulatory guidance.
 
 ## Architecture
 
-Private systems canonicalize the obligation and keep the document. One Solidity entrypoint, `ClaimStateKernel`, is the only contract call inside the funding batch. That call reads Chainlink USDC/USD before it reserves the obligation. If the dollar feed is stale or off peg, the call reverts and the advance, the evidence message, and the receipt mint roll back with it. Hedera Consensus Service orders the evidence. A demo HTS fungible token, `tUSDC`, moves the advance on testnet. The Schedule Service arms a due-date delinquency check after funding, because a HIP-551 batch cannot contain a scheduled transaction. Mirror Node is the read model and lags consensus by a few seconds.
+Private systems canonicalize commercial facts and retain original documents. `ClaimStateKernel` serves as the primary Solidity entrypoint inside the funding batch. Before reserving an obligation, it checks the Chainlink USDC/USD feed. If the oracle price is stale or falls outside the 2% peg boundary, the call reverts and rolls back the entire batch (the advance payment, the evidence message, and the receipt mint).
+
+The Hedera Consensus Service establishes an immutable order for all evidence headers. A demo HTS fungible token (`tUSDC`, 2 decimals) disburses advances on testnet. The Schedule Service registers an automated due-date delinquency check after funding succeeds. Mirror Node provides the indexed read model.
 
 ```mermaid
 flowchart LR
@@ -84,9 +109,14 @@ flowchart LR
 
 ### Funding batch
 
-Activation is one [HIP-551](https://github.com/hiero-ledger/hiero-improvement-proposals/blob/main/HIP/hip-551.md) `BatchTransaction` from `@hiero-ledger/sdk`. Inner transactions are frozen, prepared with `batchify`, and capped by a 6 KB outer transaction. If the batch rolls back, the reservation and the advance roll back together. Inner transactions can still incur fees.
+Activation is executed as one [HIP-551](https://github.com/hiero-ledger/hiero-improvement-proposals/blob/main/HIP/hip-551.md) `BatchTransaction` using `@hiero-ledger/sdk`. Four distinct actions are prepared, frozen, and bundled under a 6 KB outer transaction limit:
 
-The delinquency schedule is a separate transaction submitted only after the activation receipt. If scheduling fails, the funding still stands and the reconciler raises an alarm.
+1. **HCS evidence header**: Records the schema version, event type, obligation ID, state transition, terms root, evidence hash, actor role, and a zeroed holder field.
+2. **tUSDC advance**: Transfers 1,572,500 units ($15,725.00 at 2 decimals) to the supplier account.
+3. **Receipt NFT mint**: Mints an operational receipt with metadata containing the obligation ID and `operational-receipt-not-title`.
+4. **Contract call**: Invokes `ClaimStateKernel.activate()`, which validates Chainlink USDC/USD pricing and locks the state transition.
+
+If any inner transaction fails, the entire batch rolls back automatically. The delinquency schedule is submitted as a separate transaction immediately after activation succeeds.
 
 ```mermaid
 sequenceDiagram
@@ -109,7 +139,7 @@ sequenceDiagram
 
 ### Read path
 
-Writers trust the consensus receipt. The indexer then polls Mirror Node and marks the event pending until the topic sequence number appears. A short 404 after consensus is normal. Mirror REST responses are not portable cryptographic proofs. High-assurance evidence would archive signed record streams, which this template does not do.
+Writing applications rely on the Hedera consensus receipt as the source of truth. The background indexer polls Mirror Node and flags entries as pending until the corresponding topic sequence number appears. A short delay right after consensus is expected while Mirror Node catches up. Keep in mind that Mirror REST responses provide indexed query data rather than portable cryptographic proofs.
 
 ```mermaid
 flowchart TD
@@ -123,7 +153,7 @@ flowchart TD
 
 ## State machine
 
-`version` starts at 1 and increments on every accepted event. A stale `expectedVersion` is rejected. Replaying an event identifier is rejected. `CreditNote` updates the terms root and the amount commitment without creating a new obligation.
+The envelope `version` starts at 1 upon creation and increments with each accepted transition. Submissions with a stale `expectedVersion` or replayed event IDs are rejected. Registering a `CreditNote` updates the terms root and amount commitment without minting a new obligation ID.
 
 ```mermaid
 stateDiagram-v2
@@ -143,34 +173,34 @@ stateDiagram-v2
   DEFAULTED --> [*]
 ```
 
-A second `Activate` from any state other than `ACKNOWLEDGED`, or while a holder is already set, reverts `ALREADY_RESERVED`. The revert does not return the current holder.
+Attempting to call `Activate` from any state other than `ACKNOWLEDGED`, or while an active reservation holder already exists, reverts with `ALREADY_RESERVED`. To preserve confidentiality, the revert does not return the identity of the current holder.
 
 | State | Meaning |
 |---|---|
-| `DRAFT` | Supplier created the envelope. The buyer has not signed. |
-| `ACKNOWLEDGED` | Buyer signed the terms root. The slot is empty. |
-| `RESERVED` | One factor holds the reservation. The advance was disbursed in the same batch. |
-| `DISPUTED` | Buyer opened a dispute. The reservation stays. No second factor may enter. |
-| `DELINQUENT` | The due date passed without a settling payment. The reservation stays. |
-| `SETTLED` | The payment agent reported a settling allocation. Waiting for release. |
-| `RELEASED` | Terminal. The slot is empty and cannot be reserved again. |
-| `DEFAULTED` | Terminal recovery state. The slot remains for audit and cannot be re-reserved. |
+| `DRAFT` | Supplier created the envelope. The buyer has not signed yet. |
+| `ACKNOWLEDGED` | Buyer signed the terms root. The reservation slot remains open. |
+| `RESERVED` | One factor holds the reservation. Advance funds were disbursed in the same atomic batch. |
+| `DISPUTED` | Buyer opened an active dispute. The reservation remains locked. |
+| `DELINQUENT` | The invoice due date passed without a settling payment. |
+| `SETTLED` | The payment agent confirmed full or final settlement. Awaiting factor release. |
+| `RELEASED` | Terminal state. The slot is freed and cannot be re-reserved. |
+| `DEFAULTED` | Terminal state. Preserved for dispute resolution and historical auditing. |
 
 ## Reference workflow
 
-Private facts stay in gitignored `data/private/`. The demo invoice is a freight bill for **$18,500.00**. The factor advances **85 percent**, **$15,725.00**, in demo `tUSDC` with 2 decimals. A later **$500.00** short-pay is a credit note. Collection is a mock controlled-account report, not a bank integration.
+Private commercial records remain in the gitignored `data/private/` folder. In our testnet demo, a carrier issues a freight bill for **$18,500.00**. The factor advances **85%** (**$15,725.00**) in `tUSDC`. A subsequent **$500.00** short-pay is recorded via a credit note.
 
-| Step | Who signs | Public result |
+| Step | Who signs | On-chain result |
 |---|---|---|
-| 1 | Supplier | `DRAFT` envelope. No invoice body on-chain. |
-| 2 | Buyer | `ACKNOWLEDGED` terms root. |
-| 3 | Fingerprint and registry adapters | Signed check committed as a hash. |
-| 4 | Supplier and factor | One batch: `RESERVED`, HCS header, `tUSDC` advance. |
-| 5 | Second factor | `ALREADY_RESERVED`. Holder is not disclosed. |
-| 6 | Buyer and supplier | Credit note. Version and terms root change. State stays `RESERVED`. |
-| 7 | Payment agent, then factor | `SETTLED`, then `RELEASED`. |
+| 1 | Supplier | `DRAFT` envelope created. No invoice body on-chain. |
+| 2 | Buyer | `ACKNOWLEDGED`. Terms root signed. |
+| 3 | Fingerprint adapter | Signed duplicate-check committed as a hash. |
+| 4 | Supplier + factor | Atomic batch: `RESERVED`, HCS header, tUSDC advance, receipt mint. |
+| 5 | Second factor | Rejected: `ALREADY_RESERVED`. Holder identity not disclosed. |
+| 6 | Buyer + supplier | Credit note. Version and terms root updated while state stays `RESERVED`. |
+| 7 | Payment agent, then factor | `SETTLED`, followed by `RELEASED`. |
 
-The HCS message carries the schema version, event type, obligation id, version, previous and next state, terms root, evidence hash, actor role, and a zeroed holder field. It does not carry names, invoice numbers, bank details, or amounts. The token transfer itself reveals the advance. That leakage is accepted for the testnet demo and is not a privacy claim.
+The HCS message records the schema version, event type, obligation ID, version, state transition, terms root, evidence hash, and actor role. It never exposes participant names, invoice numbers, bank routing information, or commercial pricing. The on-chain token transfer does reveal the advance amount; this visibility is accepted for the testnet demo and is not claimed as private.
 
 ## Identifiers
 
@@ -189,87 +219,66 @@ obligationId       = keccak256(domain, blindedFingerprint, buyer, supplier)
 actionDigest       = keccak256(domain, eventType, obligationId, expectedVersion, payloadHash)
 ```
 
-`obligationId` is not a hash of the invoice number. The HMAC key stays in the fingerprint service. A later deployment can replace HMAC with an OPRF or an HSM behind the same `FingerprintProvider` interface. The hackathon key must not be written into contract storage.
+`obligationId` is never a plain hash of the invoice number. The HMAC key remains inside the fingerprint service to protect against rainbow table and dictionary attacks. Future deployments can swap HMAC for an Oblivious Pseudorandom Function (OPRF) or Hardware Security Module (HSM) behind the same `FingerprintProvider` interface.
 
-`canonicalCommercialFields` for freight are schema version, currency, amount in cents, due date, debtor reference, and carrier reference, serialized as sorted-key JSON with no insignificant whitespace.
+In freight operations, `canonicalCommercialFields` includes the schema version, currency, amount in cents, due date, debtor reference, and carrier reference, serialized as sorted-key JSON without extraneous whitespace.
 
 ## Hedera services
 
-| Service | Role in ClaimState |
+| Service | Role |
 |---|---|
-| Smart Contract Service | `ClaimStateKernel` enforces the transition table, version, and signatures. `activate` also reads Chainlink USDC/USD and reverts `PriceUnavailable` when that feed is missing, older than 48 hours, or more than 2 percent away from $1. |
-| HIP-551 batch | Binds the evidence header, the `tUSDC` advance, the receipt mint, and one final contract call. The contract call is last because a batch may contain only one, and only in that position. |
-| Consensus Service | Public, ordered evidence header. A submit key restricts writers, not readers. |
-| Token Service | Demo advance, plus one NFT receipt minted in the same activation batch. Metadata is the obligation id and `operational-receipt-not-title`. Burning that NFT does not release the reservation. |
-| Schedule Service | One-shot `markDelinquent` at the due date. There is no native repeating schedule. |
-| Mirror Node | Indexed read model after consensus. Not the write-path source of truth. |
-| Chainlink | USDC/USD on Hedera testnet (`0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5`). The funding batch cannot reserve or disburse without it. This is a dollar reference for the stablecoin advance, not a valuation of the invoice. |
+| Smart Contract Service | `ClaimStateKernel` enforces state transition rules, version increments, and ECDSA signature recovery. `activate` verifies the Chainlink USDC/USD price feed and reverts `PriceUnavailable` if data is stale (over 48 hours) or drifts more than 2% from the $1 peg. |
+| HIP-551 batch | Groups the evidence header, tUSDC advance, receipt NFT mint, and smart contract invocation into one atomic transaction. The contract call is always placed as the final inner transaction. |
+| Consensus Service | Logs ordered evidence headers on an HCS topic with an operator submit key. Because topic message bodies are public, only cryptographic commitments and Merkle roots are written. |
+| Token Service | Disburses advances via a demo stablecoin (tUSDC, 2 decimals) and issues one NFT operational receipt per activation. The receipt metadata explicitly states `operational-receipt-not-title`. Burning the receipt token does not release the contract reservation. |
+| Schedule Service | Triggers a one-shot `markDelinquent` call once the invoice reaches its due date. |
+| Mirror Node | Serves as the indexed query read model. Consensus receipts remain the authoritative write path. |
+| Chainlink | Provides live USDC/USD price data on Hedera testnet (`0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5`). The funding batch cannot reserve or disburse without an active, verified dollar peg. |
 
-HBAR amounts in the SDK use 8 decimals. `tUSDC` uses 2. Do not reuse Ethereum's 18-decimal assumption. Public Hashio is a development JSON-RPC endpoint. Scripts will accept `HEDERA_RPC_URL` and must not treat Hashio as a production dependency.
+HBAR amounts in the SDK use 8 decimals, while `tUSDC` uses 2. Ethereum's default 18-decimal standard does not apply. Public Hashio serves as a development JSON-RPC endpoint. Scripts accept `HEDERA_RPC_URL` and default to Hashio strictly for local development.
 
-Chain ids: testnet `296`, mainnet `295`. This template targets testnet.
-
-## Intended repository layout
-
-`packages/hardhat`, `packages/sdk`, and `schemas/event.schema.json` are in the tree. `packages/hardhat` holds `ClaimStateKernel`, its local tests, and the testnet scripts. The SDK builds the HIP-551 activation batch. `packages/indexer` reconciles Mirror Node after the consensus receipt. `packages/nextjs` serves `/demo` and `/obligations/[id]`.
+## Repository layout
 
 ```text
-packages/hardhat/     ClaimStateKernel, deploy, and demo scripts
-packages/sdk/         Canonicalization, commitments, state machine, batch builder
-packages/indexer/     Mirror reconciler and read model
-packages/nextjs/      Demo and obligation explorer
-adapters/             Freight policy and mock fingerprint, duplicate-check, and payment agent
+packages/hardhat/     ClaimStateKernel contract, deploy scripts, and testnet demo scripts
+packages/sdk/         Canonicalization, commitments, state machine, and HIP-551 batch builder
+packages/indexer/     Mirror Node reconciler and read model
+packages/nextjs/      Demo UI and obligation explorer
+adapters/             Freight policy, mock fingerprint, duplicate-check, and payment agent
 schemas/              Obligation, event, and evidence JSON schemas
 .harness/             Hedera Harness spec and validators
 ```
 
-`template.json` will describe this repo to `create-scaffold-hbar`. That file is removed from apps generated from the template. Harness checks against a generated app must not require it.
+`template.json` configures this repository for `create-scaffold-hbar` and is automatically stripped when users initialize new projects. The `scaffold:check` script confirms that installation, linting, testing, and Next.js production builds succeed cleanly after template configuration is removed.
 
-Developer path:
+`npm install`, `npm run lint`, `npm test`, and `npm run dev` all execute without requiring a Hedera operator key. The activation batch (including the receipt NFT mint) is capped at 6 KB.
 
-```bash
-npx create-scaffold-hbar@latest claimstate-demo --template U-GOD/ClaimState
-cp .env.example .env.local
-npm install && npm run deploy:testnet
-npm run demo:obligation
-npm run verify:mirror
-npm run dev
-```
+## Environment variables
 
-`npm install`, `npm run lint`, `npm test`, and `npm run dev` do not need an operator key. `deploy:testnet`, `demo:obligation`, and `verify:mirror` do. Public Hashio is the default JSON-RPC for that local demo and is not a production endpoint. The activation batch, including the receipt mint, must stay under 6 KB. Generated apps do not keep `template.json`; `npm run scaffold:check` deletes it and still runs install, lint, test, and the demo build.
+| Variable | Required for | Description |
+|---|---|---|
+| `HEDERA_OPERATOR_ID` | Testnet scripts | Hedera testnet account ID (for example, `0.0.12345`). |
+| `HEDERA_OPERATOR_ECDSA_KEY` | Testnet scripts | Hex-encoded 32-byte ECDSA private key. Store exclusively in `.env.local`. |
+| `HEDERA_CHAIN_ID` | Optional | EVM chain ID. Defaults to `296` (testnet). |
+| `HEDERA_RPC_URL` | Optional | JSON-RPC endpoint. Defaults to `https://testnet.hashio.io/api`. |
+| `HEDERA_MIRROR_BASE_URL` | Optional | Mirror Node REST endpoint. Defaults to `https://testnet.mirrornode.hedera.com`. |
 
-## Build order
+Copy `.env.example` to `.env.local` and add your operator credentials. `.env.local` is gitignored and should never be checked into version control.
 
-Phases are gated. Do not deploy, create `tUSDC`, or start the demo UI until the off-chain state machine rejects illegal transitions in unit tests.
+## Privacy and security
 
-| Phase | Outcome |
-|---|---|
-| 0 | Workspace skeleton and written invariants |
-| 1 | Off-chain state machine and commitment tests |
-| 2 | `ClaimStateKernel` on testnet through acknowledgement |
-| 3 | Atomic reservation and disbursement |
-| 4 | Credit note, dispute, delinquency, settlement, and release |
-| 5 | Three-minute judge demo |
-| 6 | Optional HTS evidence receipt, only if the batch still fits |
-| 7 | Scaffold generation and Hedera Harness |
-| 8 | After the bounty: HSM fingerprint, MonetaGo, filing references, a second financier |
+The protocol provides an immutable record of what participating parties have signed. It cannot physically verify whether freight was loaded onto a truck, nor can it stop colluding parties from signing a well-formed but fabricated obligation.
 
-Phase 6 is dropped rather than splitting the batch if the outer transaction would exceed 6 KB.
+Key design boundaries include:
 
-## Privacy and security boundaries
+- **No invoice number hashing**: To prevent dictionary and rainbow table attacks, obligations use HMAC-based blind fingerprints rather than raw hashes. The fingerprint service remains a trusted component.
+- **Off-registry financing**: The protocol can only track obligations and reservations generated within participating systems.
+- **Mirror Node latency**: The front-end UI may briefly show pending status while Mirror Node indexes new events. Consensus receipts represent the immediate source of truth.
+- **No pause key on receipt tokens**: Emergency administrative keys are intentionally omitted from operational receipts.
+- **Delinquency schedules are not payment guarantees**: A scheduled `markDelinquent` invocation updates state on-chain, but does not execute automated debt collection.
 
-Participants can still collude to sign a fabricated but well-formed obligation. The protocol orders what they signed. It does not prove that freight moved.
-
-Known limits, each of which the implementation must preserve:
-
-- Dictionary attacks against raw invoice numbers are avoided by not hashing those numbers. The fingerprint service becomes a trust dependency.
-- Off-registry financing remains invisible.
-- Mirror Node lag can make the UI briefly stale. The receipt is authoritative until indexing completes.
-- Emergency pause or freeze authority, if added for the optional receipt, is governance power and must be separate from the lifecycle key.
-- A scheduled call does not create credit and does not guarantee that the buyer will pay.
-
-Threat details for the activation batch live in `THREAT_MODEL.md`. Key handling, topic contents, and the absence of a pause key live in `SECURITY.md`. Legal limits live in `LEGAL_BOUNDARIES.md`.
+See [THREAT_MODEL.md](THREAT_MODEL.md) for activation batch threat analysis, [SECURITY.md](SECURITY.md) for key handling and topic contents, and [LEGAL_BOUNDARIES.md](LEGAL_BOUNDARIES.md) for legal scope.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE).
