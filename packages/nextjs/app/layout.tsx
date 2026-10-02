@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <header>
-          <a href="/demo">Demo</a>
+          <a href="/demo">ClaimState</a>
         </header>
         {children}
       </body>
