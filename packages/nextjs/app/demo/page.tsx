@@ -1,22 +1,38 @@
 import { decodeEvidenceHeader } from "@claimstate/sdk";
-import { DEMO_OBLIGATION_ID, demoStory, hashScanTopicUrl, presentHeader } from "@claimstate/indexer";
+import {
+  DEMO_OBLIGATION_ID,
+  demoStory,
+  hashScanTopicUrl,
+  presentHeader,
+  type PublicHeaderView,
+} from "@claimstate/indexer";
 import { AdapterSwitch } from "./adapter-switch";
 import { IndexStatus } from "./index-status";
+
+const FIELDS: { key: keyof PublicHeaderView; label: string }[] = [
+  { key: "version", label: "Version" },
+  { key: "previousState", label: "Previous state" },
+  { key: "newState", label: "State" },
+  { key: "termsRoot", label: "Terms root" },
+  { key: "evidenceHash", label: "Evidence hash" },
+  { key: "actorRole", label: "Actor role" },
+  { key: "holder", label: "Holder" },
+];
 
 export default function DemoPage() {
   const steps = demoStory();
   return (
     <main>
-      <h1>Reference story</h1>
-      <p>
-        Local commercial facts sit beside the decoded HCS header. The header does not carry the invoice, the
-        names, or the amounts.
+      <h1>Obligation</h1>
+      <p className="lede">
+        Buyer-confirmed freight invoice. The public message is the signed header. Amounts and references stay in
+        the local store.
       </p>
       <AdapterSwitch />
-      <IndexStatus sequence="1" />
       <p>
-        Obligation <a href={`/obligations/${DEMO_OBLIGATION_ID}`}>{DEMO_OBLIGATION_ID}</a>
+        <a href={`/obligations/${DEMO_OBLIGATION_ID}`}>{DEMO_OBLIGATION_ID}</a>
       </p>
+      <IndexStatus sequence="1" />
       {steps.map((step, index) => {
         const header =
           step.publicMessage === null ? null : presentHeader(decodeEvidenceHeader(step.publicMessage.message));
@@ -29,7 +45,7 @@ export default function DemoPage() {
             <div className="columns">
               <div>
                 <h3>Local store</h3>
-                {step.localFacts.length === 0 ? <p>No private fact is published for this step.</p> : null}
+                {step.localFacts.length === 0 ? <p>None.</p> : null}
                 <ul>
                   {step.localFacts.map((fact) => (
                     <li key={fact}>{fact}</li>
@@ -37,10 +53,19 @@ export default function DemoPage() {
                 </ul>
               </div>
               <div>
-                <h3>Decoded HCS payload</h3>
+                <h3>Public header</h3>
                 {step.reservedError !== null ? <p>{step.reservedError}. Holder not shown.</p> : null}
-                {header === null || step.publicMessage === null ? null : (
-                  <pre>{JSON.stringify(header, null, 2)}</pre>
+                {header === null ? null : (
+                  <table>
+                    <tbody>
+                      {FIELDS.map((field) => (
+                        <tr key={field.key}>
+                          <th scope="row">{field.label}</th>
+                          <td>{header[field.key]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
                 {step.publicMessage === null ? null : (
                   <p>
