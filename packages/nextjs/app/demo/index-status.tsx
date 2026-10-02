@@ -28,8 +28,8 @@ export function IndexStatus({ sequence }: { sequence: string }) {
   }, [sequence]);
 
   return (
-    <p className={status} data-index-status={status}>
-      Index status: {status === "pending" ? "pending index" : "resolved"}
+    <p className="meta" data-index-status={status}>
+      {status === "pending" ? "pending index" : "resolved"}
     </p>
   );
 }
