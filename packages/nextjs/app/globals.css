@@ -1,43 +1,145 @@
 body {
   margin: 0;
-  font-family: Georgia, serif;
-  color: #1c1917;
-  background: #faf7f2;
-}
-
-header, main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #fff;
 }
 
 a {
-  color: #1d4ed8;
+  color: #16324f;
+}
+
+header {
+  background: #16324f;
+  color: #fff;
+}
+
+header a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+header, main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+
+h1 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5c5c5c;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lede,
+.meta {
+  color: #5c5c5c;
+}
+
+.lede {
+  margin-top: 0;
+}
+
+.switch {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1.25rem 0 0;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.switch button {
+  margin: 0 0 -1px;
+  padding: 0.4rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #5c5c5c;
+  font: inherit;
+  cursor: pointer;
+}
+
+.switch button[aria-pressed="true"] {
+  color: #16324f;
+  border-bottom-color: #16324f;
+}
+
+.switch + p {
+  margin-top: 0.75rem;
 }
 
 section {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: white;
-  border: 1px solid #e7e5e4;
+  margin: 0;
+  padding: 1.5rem 0;
+  border-top: 1px solid #e2e2e2;
+  background: transparent;
 }
 
 .columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 2rem;
 }
 
-code, pre {
-  font-family: ui-monospace, monospace;
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.35rem 0.75rem 0.35rem 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+th {
+  width: 9rem;
+  color: #5c5c5c;
+  font-weight: 600;
+}
+
+td {
+  font-family: Consolas, "Courier New", monospace;
   font-size: 0.85rem;
   overflow-wrap: anywhere;
 }
 
-.pending {
-  color: #9a3412;
+ul {
+  margin: 0;
+  padding-left: 1.15rem;
 }
 
-.resolved {
-  color: #166534;
+li {
+  margin: 0.2rem 0;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
 }
