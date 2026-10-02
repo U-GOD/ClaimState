@@ -23,15 +23,20 @@ export default async function ObligationPage({ params }: { params: Promise<{ id:
       </p>
       <p>Signer roles: {roles.join(", ")}</p>
       <IndexStatus sequence={latest.sequenceNumber} />
-      <ul>
-        {rows.map((row) => (
-          <li key={row.sequenceNumber}>
-            <a href={hashScanTopicUrl(row.topicId)}>Sequence {row.sequenceNumber}</a> {row.status}
-          </li>
-        ))}
-      </ul>
+      <table>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.sequenceNumber}>
+              <th scope="row">
+                <a href={hashScanTopicUrl(row.topicId)}>Sequence {row.sequenceNumber}</a>
+              </th>
+              <td>{row.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <p>
-        <a href="/demo">Back to the demo</a>
+        <a href="/demo">All steps</a>
       </p>
     </main>
   );
