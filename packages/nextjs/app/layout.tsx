@@ -10,10 +10,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <header>
-          <a href="/demo">ClaimState</a>
+        <header className="bar">
+          <div className="frame">
+            <a href="/">ClaimState</a>
+            <span>Obligation record</span>
+          </div>
         </header>
         {children}
+        <footer>
+          <div className="frame">
+            <p>Signed lifecycle evidence. Not a title, a lien, or an assignment.</p>
+          </div>
+        </footer>
       </body>
     </html>
   );
