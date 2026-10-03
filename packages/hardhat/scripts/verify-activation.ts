@@ -4,7 +4,7 @@ import { domainSeparator, STATE_CODE } from "@claimstate/sdk";
 import {
   accountClient,
   operatorClient,
-  readDemoAccounts,
+  readAccounts,
   readManifest,
   type DeploymentManifest,
 } from "./session.js";
@@ -23,7 +23,7 @@ await verifyFailures();
 
 async function verifyFailures(): Promise<void> {
   const manifest = await readManifest();
-  const accounts = await readDemoAccounts();
+  const accounts = await readAccounts();
   const operator = operatorClient();
   const factor = accountClient(accounts.factor);
   try {
@@ -41,7 +41,7 @@ async function craftedInnerFailure(
   operator: ReturnType<typeof operatorClient>,
   factor: ReturnType<typeof accountClient>,
   manifest: DeploymentManifest,
-  accounts: Awaited<ReturnType<typeof readDemoAccounts>>,
+  accounts: Awaited<ReturnType<typeof readAccounts>>,
 ): Promise<void> {
   const strangerKey = PrivateKey.generateECDSA();
   const created = await new AccountCreateTransaction()
@@ -71,7 +71,7 @@ async function staleVersion(
   operator: ReturnType<typeof operatorClient>,
   factor: ReturnType<typeof accountClient>,
   manifest: DeploymentManifest,
-  accounts: Awaited<ReturnType<typeof readDemoAccounts>>,
+  accounts: Awaited<ReturnType<typeof readAccounts>>,
 ): Promise<void> {
   const opened = await openAcknowledged(operator, manifest, accounts, "carrier-ref-stale");
   const before = await snapshot(operator, manifest, opened.obligationId);
@@ -100,7 +100,7 @@ async function replayAndSecondFactor(
   operator: ReturnType<typeof operatorClient>,
   factor: ReturnType<typeof accountClient>,
   manifest: DeploymentManifest,
-  accounts: Awaited<ReturnType<typeof readDemoAccounts>>,
+  accounts: Awaited<ReturnType<typeof readAccounts>>,
 ): Promise<void> {
   const opened = await openAcknowledged(operator, manifest, accounts, "carrier-ref-replay");
   const funded = await activationBatch({ factor, manifest, obligation: opened });
