@@ -6,6 +6,22 @@ In supply chain finance and transportation factoring, commercial documents like 
 
 Our reference implementation demonstrates a freight factoring workflow where a financier advances funds against a buyer-confirmed invoice. The core kernel is completely asset-agnostic: the same state machine can manage service level agreements, construction milestones, or performance bonds simply by swapping the evidence verification policy.
 
+## Docs
+
+Start here if the terms are new. The README below is the protocol reference.
+
+| Guide | What it answers |
+|---|---|
+| [What you are looking at](frontend/docs/what-you-are-looking-at.md) | The bill, the seven cards, and why the local page is a guided example |
+| [Quickstart](frontend/docs/quickstart.md) | Scaffold, run without a key, deploy, and walk one obligation |
+| [Architecture](frontend/docs/architecture.md) | Private bill, public fingerprint, one lender, one funding batch |
+| [Lifecycle](frontend/docs/lifecycle.md) | States, events, and who signs each step |
+| [Writing an adapter](frontend/docs/writing-an-adapter.md) | How a second obligation type reuses the same kernel |
+| [Hedera landmines](frontend/docs/hedera-landmines.md) | Batch order, decimals, Mirror lag, keys, and install peers |
+| [Dead ends](frontend/docs/dead-ends.md) | Approaches that were tried and rejected |
+
+The same pages are a site in `frontend/`. On Vercel, set the root directory to `frontend`. No operator key is required.
+
 ## The problem
 
 Financing an invoice is rarely as simple as handling a single document. In real-world freight and B2B trade, information lives in silos:
