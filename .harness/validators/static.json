@@ -14,7 +14,7 @@
     "forbidden": [
       ".env",
       ".env.local",
-      "data/private/demo-accounts.json"
+      "data/private/accounts.json"
     ]
   },
   "textAssertions": [
@@ -24,7 +24,7 @@
     },
     {
       "file": "README.md",
-      "contains": ["6 KB", "Hashio", "npm run demo:obligation", "npm run dev"]
+      "contains": ["6 KB", "Hashio", "npm run obligation", "npm run dev"]
     },
     {
       "file": "LEGAL_BOUNDARIES.md",
