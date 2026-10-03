@@ -33,6 +33,7 @@ export default async function ObligationPage({ params }: { params: Promise<{ id:
           </dd>
         </div>
       </dl>
+      <div className="panel">
       <table className="ledger">
         <tbody>
           {rows.map((row) => (
@@ -45,6 +46,7 @@ export default async function ObligationPage({ params }: { params: Promise<{ id:
           ))}
         </tbody>
       </table>
+      </div>
       <p className="back">
         <a href="/">All steps</a>
       </p>
