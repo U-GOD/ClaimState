@@ -19,7 +19,7 @@
     "dev": "npm run dev --workspace=@claimstate/nextjs",
     "deploy:testnet": "npm run deploy:testnet --workspace=@claimstate/hardhat",
     "smoke:acknowledge": "npm run smoke:acknowledge --workspace=@claimstate/hardhat",
-    "demo:obligation": "npm run demo:obligation --workspace=@claimstate/hardhat",
+    "obligation": "npm run obligation --workspace=@claimstate/hardhat",
     "verify:mirror": "npm run verify:mirror --workspace=@claimstate/hardhat",
     "verify:activation": "npm run verify:activation --workspace=@claimstate/hardhat",
     "fixture:delinquency": "npm run fixture:delinquency --workspace=@claimstate/hardhat",
