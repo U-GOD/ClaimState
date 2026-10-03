@@ -8,7 +8,7 @@ import {
   type FreightCommercialFields,
 } from "./canonicalize.js";
 
-const demoFields: FreightCommercialFields = {
+const fields: FreightCommercialFields = {
   schemaVersion: 1,
   currency: "USD",
   amountCents: 1_850_000n,
@@ -20,7 +20,7 @@ const demoFields: FreightCommercialFields = {
 test("canonical JSON sorts keys and omits insignificant whitespace", () => {
   assert.equal(canonicalize({ b: 1, a: { d: true, c: "x y" } }), '{"a":{"c":"x y","d":true},"b":1}');
   assert.equal(
-    canonicalCommercialFields(demoFields),
+    canonicalCommercialFields(fields),
     '{"amountCents":1850000,"carrierReference":"carrier-ref-1","currency":"USD","debtorReference":"debtor-ref-1","dueDate":"2026-12-31","schemaVersion":1}',
   );
 });
@@ -41,7 +41,7 @@ test("whitespace inside a string is significant", () => {
 });
 
 test("commercial fields reject an invoice number", () => {
-  const withInvoice = { ...demoFields, invoiceNumber: "INV-18500" };
+  const withInvoice = { ...fields, invoiceNumber: "INV-18500" };
   assert.throws(
     () => canonicalCommercialFields(withInvoice as FreightCommercialFields),
     /invoiceNumber/,
