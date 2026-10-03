@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.88.0",
-    "ethers": "6.16.0"
+    "ethers": "6.16.0",
+    "protobufjs": "8.0.1"
   },
   "devDependencies": {
     "@types/node": "22.19.1",
