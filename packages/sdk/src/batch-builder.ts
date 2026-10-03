@@ -13,7 +13,7 @@ import { ACTOR_ROLE, encodeEvidenceHeader } from "./evidence.js";
 /** HIP-551 outer transaction cap. The activation batch must stay under it. */
 export const MAX_OUTER_BATCH_BYTES = 6_000;
 
-/** Demo tUSDC uses 2 decimals. 1,572,500 units display as 15,725.00. */
+/** tUSDC uses 2 decimals. 1,572,500 units display as 15,725.00. */
 export const TUSDC_DECIMALS = 2;
 export const ADVANCE_TOKEN_UNITS = 1_572_500n;
 
