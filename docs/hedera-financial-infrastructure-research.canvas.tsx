@@ -457,7 +457,7 @@ function Research() {
           <Bullet>Only 12 netting, 4 DvP, and 1 securities-lending results surfaced; most netting examples were swap or state-channel specific.</Bullet>
           <Bullet>Receivable returned 10 projects, but they rebuild invoice NFTs, vaults, underwriting, and payouts without shared portfolio controls.</Bullet>
           <Bullet>Agent finance overwhelmingly means wallets, x402, swaps, auto-yield, or spending policy—not underwriting, default, claims, or recovery.</Bullet>
-          <Bullet>Recent finalist selection favors complete vertical demos, so the reusable kernel needs the vivid freight-invoice reference workflow.</Bullet>
+          <Bullet>Recent finalist selection favors a complete vertical workflow, so the reusable kernel needs the vivid freight-invoice reference workflow.</Bullet>
         </Stack>
       </Grid>
 
@@ -765,13 +765,13 @@ function Template() {
         integration/
       scripts/
         deploy.ts
-        create-demo-obligation.ts
+        run-obligation.ts
         verify-mirror.ts
     nextjs/
       app/
         obligations/
         create/
-        demo/
+        app/
         api/mirror/
       components/
       hooks/
@@ -845,12 +845,12 @@ function Template() {
         <CardHeader>Five-command happy path</CardHeader>
         <CardBody>
           <Stack gap={8}>
-            <Text><Code>npx create-scaffold-hbar@latest claimstate-demo --template your-org/claimstate-template</Code></Text>
+            <Text><Code>npx create-scaffold-hbar@latest claimstate --template your-org/claimstate-template</Code></Text>
             <Text><Code>cp .env.example .env.local</Code> and set funded Hedera testnet operator credentials.</Text>
             <Text><Code>npm install && npm run deploy:testnet</Code></Text>
-            <Text><Code>npm run demo:obligation</Code> creates topic, obligation envelope, reservation, atomic activation, and scheduled settlement.</Text>
+            <Text><Code>npm run obligation</Code> creates topic, obligation envelope, reservation, atomic activation, and scheduled settlement.</Text>
             <Text><Code>npm run verify:mirror</Code> prints Mirror Node and HashScan links and asserts state/evidence/payment consistency.</Text>
-            <Text><Code>npm run dev</Code> opens the lifecycle explorer and guided demo.</Text>
+            <Text><Code>npm run dev</Code> opens the lifecycle explorer.</Text>
           </Stack>
         </CardBody>
       </Card>
@@ -886,14 +886,14 @@ function Template() {
       <Callout tone="info" title="Use it—and submit the recipe and validators">
         <Stack gap={6}>
           <Text><Code>.harness/spec.yaml</Code> uses <Code>schemaVersion: 2</Code>, a baseline command literally named <Code>install</Code>, and the default deterministic validators.</Text>
-          <Text>Tier 2 Playwright verifies the guided demo routes and state transitions render.</Text>
+          <Text>Tier 2 Playwright verifies the routes and state transitions render.</Text>
           <Text>Tier 3 semantic validation grades numbered assertions: no plaintext documents, reservation invariant, signed transition display, and recovery UX.</Text>
           <Text>Tier 3.5 creates an ephemeral funded testnet signer, runs atomic activation, queries Mirror Node, and proves the HCS event, contract version, optional HTS receipt, and payment share one parent batch.</Text>
           <Text>A custom validator also scaffolds into a fresh temporary directory and runs install, lint, test, build, and route health checks—the exact eligibility gate.</Text>
         </Stack>
       </Callout>
 
-      <H2>21 · 2–3 minute demo</H2>
+      <H2>21 · 2–3 minute walkthrough</H2>
       <Table
         headers={["Time", "What judges see", "What it proves"]}
         rows={[
