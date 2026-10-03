@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { evidenceForObligation, hashScanTopicUrl, presentHeader } from "@claimstate/indexer";
 import { readModel } from "../../../lib/store";
-import { IndexStatus } from "../../demo/index-status";
+import { IndexStatus } from "../../components/index-status";
 
 export default async function ObligationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,14 +16,24 @@ export default async function ObligationPage({ params }: { params: Promise<{ id:
   const view = presentHeader(latest.header);
   const roles = [...new Set(rows.map((row) => presentHeader(row.header).actorRole))];
   return (
-    <main>
+    <main className="frame">
       <h1>Obligation</h1>
-      <p>
+      <p className="lede">
         State {view.newState}. Version {view.version}.
       </p>
-      <p>Signer roles: {roles.join(", ")}</p>
-      <IndexStatus sequence={latest.sequenceNumber} />
-      <table>
+      <dl className="identity">
+        <div>
+          <dt>Signer roles</dt>
+          <dd>{roles.join(", ")}</dd>
+        </div>
+        <div>
+          <dt>Index</dt>
+          <dd>
+            <IndexStatus sequence={latest.sequenceNumber} />
+          </dd>
+        </div>
+      </dl>
+      <table className="ledger">
         <tbody>
           {rows.map((row) => (
             <tr key={row.sequenceNumber}>
@@ -35,8 +45,8 @@ export default async function ObligationPage({ params }: { params: Promise<{ id:
           ))}
         </tbody>
       </table>
-      <p>
-        <a href="/demo">All steps</a>
+      <p className="back">
+        <a href="/">All steps</a>
       </p>
     </main>
   );
