@@ -1,4 +1,4 @@
-import { accountClient, operatorClient, readDemoAccounts, readManifest } from "./session.js";
+import { accountClient, operatorClient, readAccounts, readManifest } from "./session.js";
 import { STATE_CODE } from "@claimstate/sdk";
 import {
   activationBatch,
@@ -13,7 +13,7 @@ await fixture();
 
 async function fixture(): Promise<void> {
   const manifest = await readManifest();
-  const accounts = await readDemoAccounts();
+  const accounts = await readAccounts();
   const plan = await readFreightFixture();
   const dueUnix = BigInt(Math.floor(Date.now() / 1000) + 86_400);
   const dueDate = new Date(Number(dueUnix) * 1000).toISOString().slice(0, 10);
