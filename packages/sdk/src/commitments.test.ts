@@ -22,7 +22,7 @@ const fingerprint = `0x${"ab".repeat(32)}`;
 const saltA = `0x${"11".repeat(32)}`;
 const saltB = `0x${"22".repeat(32)}`;
 
-const demoFields: FreightCommercialFields = {
+const fields: FreightCommercialFields = {
   schemaVersion: 1,
   currency: "USD",
   amountCents: 1_850_000n,
@@ -81,9 +81,9 @@ test("obligationId changes when chain id, registry, or topic id changes", () => 
 test("a commercial fingerprint change moves the obligation id without hashing an invoice number", () => {
   const key = Uint8Array.from({ length: 32 }, () => 0x11);
   const provider = hmacFingerprintProvider(key);
-  const basePrint = hexlify(provider.fingerprint(commercialFieldBytes(demoFields)));
+  const basePrint = hexlify(provider.fingerprint(commercialFieldBytes(fields)));
   const changedPrint = hexlify(
-    provider.fingerprint(commercialFieldBytes({ ...demoFields, amountCents: 1_800_000n })),
+    provider.fingerprint(commercialFieldBytes({ ...fields, amountCents: 1_800_000n })),
   );
   const baseId = obligationId({
     domain: domain(),
