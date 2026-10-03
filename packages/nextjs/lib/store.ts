@@ -1,5 +1,5 @@
 import {
-  demoStory,
+  storySteps,
   emptyReadModel,
   fetchMirrorMessage,
   reconcileSequence,
@@ -11,7 +11,7 @@ import {
 const model: ReadModel = emptyReadModel();
 const localMisses = new Map<string, number>();
 
-for (const step of demoStory()) {
+for (const step of storySteps()) {
   if (step.publicMessage !== null) {
     upsertConsensus(model, step.publicMessage);
   }
