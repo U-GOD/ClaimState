@@ -3,11 +3,11 @@ import { test } from "node:test";
 import { decodeEvidenceHeader } from "@claimstate/sdk";
 import { fetchMirrorMessage, reconcileSequence } from "./mirror-reconciler.js";
 import { emptyReadModel, upsertConsensus } from "./read-model.js";
-import { assertPublicPayloadOmitsLocalFacts, demoStory, DEMO_OBLIGATION_ID } from "./story.js";
+import { assertPublicPayloadOmitsLocalFacts, storySteps, STORY_OBLIGATION_ID } from "./story.js";
 
 test("consensus is stored pending and a duplicate sequence is ignored", () => {
   const model = emptyReadModel();
-  const created = demoStory()[0]?.publicMessage;
+  const created = storySteps()[0]?.publicMessage;
   if (created === undefined || created === null) {
     throw new Error("missing create message");
   }
@@ -19,7 +19,7 @@ test("consensus is stored pending and a duplicate sequence is ignored", () => {
 
 test("mirror 404 stays pending and a matching message resolves once", async () => {
   const model = emptyReadModel();
-  const created = demoStory()[0]?.publicMessage;
+  const created = storySteps()[0]?.publicMessage;
   if (created === undefined || created === null) {
     throw new Error("missing create message");
   }
@@ -38,7 +38,7 @@ test("mirror 404 stays pending and a matching message resolves once", async () =
 
 test("a mirror body that disagrees with consensus is rejected", async () => {
   const model = emptyReadModel();
-  const created = demoStory()[0]?.publicMessage;
+  const created = storySteps()[0]?.publicMessage;
   if (created === undefined || created === null) {
     throw new Error("missing create message");
   }
@@ -50,7 +50,7 @@ test("a mirror body that disagrees with consensus is rejected", async () => {
 });
 
 test("the scripted story has seven steps and hides local facts", () => {
-  const steps = demoStory();
+  const steps = storySteps();
   assert.equal(steps.length, 7);
   assert.equal(steps[3]?.reservedError, "ALREADY_RESERVED");
   assert.equal(steps[3]?.publicMessage, null);
@@ -60,7 +60,7 @@ test("the scripted story has seven steps and hides local facts", () => {
     throw new Error("missing credit note");
   }
   const header = decodeEvidenceHeader(credit.message);
-  assert.equal(header.obligationId, DEMO_OBLIGATION_ID);
+  assert.equal(header.obligationId, STORY_OBLIGATION_ID);
   assert.equal(header.newState, 3);
   assert.equal(header.holder, `0x${"00".repeat(20)}`);
 });
