@@ -48,14 +48,14 @@ cd my-app
 cp .env.example .env.local          # add your testnet operator id and ECDSA key
 npm install
 npm run deploy:testnet               # deploy contract, topic, tUSDC, and receipt token
-npm run demo:obligation              # walk one obligation from DRAFT to RELEASED
+npm run obligation                   # walk one obligation from DRAFT to RELEASED
 npm run verify:mirror                # confirm all 7 topic sequences on Mirror Node
-npm run dev                          # start the demo UI at http://localhost:3000
+npm run dev                          # http://localhost:3000
 ```
 
 `npm install`, `npm run lint`, `npm test`, and `npm run dev` work out of the box without requiring operator credentials.
 
-To run the live testnet scripts (`deploy:testnet`, `demo:obligation`, `verify:mirror`), you will need a funded Hedera testnet account. You can grab free testnet HBAR directly from the [Hedera Portal faucet](https://portal.hedera.com/).
+To run the live testnet scripts (`deploy:testnet`, `obligation`, `verify:mirror`), you will need a funded Hedera testnet account. You can grab free testnet HBAR directly from the [Hedera Portal faucet](https://portal.hedera.com/).
 
 ## Testnet deployment
 
@@ -63,21 +63,21 @@ The complete obligation lifecycle has been deployed and verified on the Hedera t
 
 | Resource | Testnet ID | HashScan Explorer |
 |---|---|---|
-| ClaimStateKernel | `0.0.10743893` | [View contract](https://hashscan.io/testnet/contract/0.0.10743893) |
-| HCS evidence topic | `0.0.10743885` | [View topic](https://hashscan.io/testnet/topic/0.0.10743885) |
-| tUSDC advance token | `0.0.10743886` | [View token](https://hashscan.io/testnet/token/0.0.10743886) |
-| Operational receipt NFT | `0.0.10743889` | [View token](https://hashscan.io/testnet/token/0.0.10743889) |
+| ClaimStateKernel | `0.0.10835620` | [View contract](https://hashscan.io/testnet/contract/0.0.10835620) |
+| HCS evidence topic | `0.0.10835617` | [View topic](https://hashscan.io/testnet/topic/0.0.10835617) |
+| tUSDC advance token | `0.0.10835618` | [View token](https://hashscan.io/testnet/token/0.0.10835618) |
+| Operational receipt NFT | `0.0.10835619` | [View token](https://hashscan.io/testnet/token/0.0.10835619) |
 | Chainlink USDC/USD feed | `0.0.4873353` | [View contract](https://hashscan.io/testnet/contract/0.0.4873353) |
 
-In our end-to-end verification run, the full lifecycle reached `RELEASED` at version 7. All seven topic message sequences were confirmed through the Hedera Mirror Node. At activation, the Chainlink feed reported a live price of `99985881` (8 decimals, approximately $0.9999), satisfying the stablecoin peg check.
+In the end-to-end run, the obligation reached `RELEASED` at version 7. Mirror Node has all seven topic sequences. The supplier advance balance is 1,572,500 units ($15,725.00). The advance token is named ClaimState Advance.
 
-> **Legal notice:** Holding a demo token, an HTS operational receipt, or an HCS topic message does not constitute an assignment of receivables, a perfected lien under commercial law, or UCC Article 12 controllable electronic record control. See [LEGAL_BOUNDARIES.md](LEGAL_BOUNDARIES.md) for detailed regulatory guidance.
+> **Legal notice:** Holding the advance token, an HTS operational receipt, or an HCS topic message does not constitute an assignment of receivables, a perfected lien under commercial law, or UCC Article 12 controllable electronic record control. See [LEGAL_BOUNDARIES.md](LEGAL_BOUNDARIES.md) for detailed regulatory guidance.
 
 ## Architecture
 
 Private systems canonicalize commercial facts and retain original documents. `ClaimStateKernel` serves as the primary Solidity entrypoint inside the funding batch. Before reserving an obligation, it checks the Chainlink USDC/USD feed. If the oracle price is stale or falls outside the 2% peg boundary, the call reverts and rolls back the entire batch (the advance payment, the evidence message, and the receipt mint).
 
-The Hedera Consensus Service establishes an immutable order for all evidence headers. A demo HTS fungible token (`tUSDC`, 2 decimals) disburses advances on testnet. The Schedule Service registers an automated due-date delinquency check after funding succeeds. Mirror Node provides the indexed read model.
+The Hedera Consensus Service establishes an immutable order for all evidence headers. An HTS fungible token (`tUSDC`, 2 decimals) disburses advances on testnet. The Schedule Service registers an automated due-date delinquency check after funding succeeds. Mirror Node provides the indexed read model.
 
 ```mermaid
 flowchart LR
@@ -189,7 +189,7 @@ Attempting to call `Activate` from any state other than `ACKNOWLEDGED`, or while
 
 ## Reference workflow
 
-Private commercial records remain in the gitignored `data/private/` folder. In our testnet demo, a carrier issues a freight bill for **$18,500.00**. The factor advances **85%** (**$15,725.00**) in `tUSDC`. A subsequent **$500.00** short-pay is recorded via a credit note.
+Private commercial records remain in the gitignored `data/private/` folder. On testnet, a carrier issues a freight bill for **$18,500.00**. The factor advances **85%** (**$15,725.00**) in `tUSDC`. A subsequent **$500.00** short-pay is recorded via a credit note.
 
 | Step | Who signs | On-chain result |
 |---|---|---|
@@ -201,7 +201,7 @@ Private commercial records remain in the gitignored `data/private/` folder. In o
 | 6 | Buyer + supplier | Credit note. Version and terms root updated while state stays `RESERVED`. |
 | 7 | Payment agent, then factor | `SETTLED`, followed by `RELEASED`. |
 
-The HCS message records the schema version, event type, obligation ID, version, state transition, terms root, evidence hash, and actor role. It never exposes participant names, invoice numbers, bank routing information, or commercial pricing. The on-chain token transfer does reveal the advance amount; this visibility is accepted for the testnet demo and is not claimed as private.
+The HCS message records the schema version, event type, obligation ID, version, state transition, terms root, evidence hash, and actor role. It never exposes participant names, invoice numbers, bank routing information, or commercial pricing. The on-chain token transfer does reveal the advance amount; this visibility is accepted on testnet and is not claimed as private.
 
 ## Identifiers
 
@@ -231,7 +231,7 @@ In freight operations, `canonicalCommercialFields` includes the schema version, 
 | Smart Contract Service | `ClaimStateKernel` enforces state transition rules, version increments, and ECDSA signature recovery. `activate` verifies the Chainlink USDC/USD price feed and reverts `PriceUnavailable` if data is stale (over 48 hours) or drifts more than 2% from the $1 peg. |
 | HIP-551 batch | Groups the evidence header, tUSDC advance, receipt NFT mint, and smart contract invocation into one atomic transaction. The contract call is always placed as the final inner transaction. |
 | Consensus Service | Logs ordered evidence headers on an HCS topic with an operator submit key. Because topic message bodies are public, only cryptographic commitments and Merkle roots are written. |
-| Token Service | Disburses advances via a demo stablecoin (tUSDC, 2 decimals) and issues one NFT operational receipt per activation. The receipt metadata explicitly states `operational-receipt-not-title`. Burning the receipt token does not release the contract reservation. |
+| Token Service | Disburses advances via tUSDC (2 decimals) and issues one NFT operational receipt per activation. The receipt metadata explicitly states `operational-receipt-not-title`. Burning the receipt token does not release the contract reservation. |
 | Schedule Service | Triggers a one-shot `markDelinquent` call once the invoice reaches its due date. |
 | Mirror Node | Serves as the indexed query read model. Consensus receipts remain the authoritative write path. |
 | Chainlink | Provides live USDC/USD price data on Hedera testnet (`0xb632a7e7e02d76c0Ce99d9C62c7a2d1B5F92B6B5`). The funding batch cannot reserve or disburse without an active, verified dollar peg. |
@@ -241,10 +241,10 @@ HBAR amounts in the SDK use 8 decimals, while `tUSDC` uses 2. Ethereum's default
 ## Repository layout
 
 ```text
-packages/hardhat/     ClaimStateKernel contract, deploy scripts, and testnet demo scripts
+packages/hardhat/     ClaimStateKernel contract, deploy scripts, and testnet scripts
 packages/sdk/         Canonicalization, commitments, state machine, and HIP-551 batch builder
 packages/indexer/     Mirror Node reconciler and read model
-packages/nextjs/      Demo UI and obligation explorer
+packages/nextjs/      Obligation record and explorer
 adapters/             Freight policy, mock fingerprint, duplicate-check, and payment agent
 schemas/              Obligation, event, and evidence JSON schemas
 .harness/             Hedera Harness spec and validators
