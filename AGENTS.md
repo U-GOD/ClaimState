@@ -16,8 +16,8 @@ The reference workflow is one U.S. transportation factor financing a buyer-confi
 8. An HTS receipt, if built, is an operational receipt. Metadata and docs say it is not an assignment and not a lien.
 9. Consensus receipts are the write-path source of truth. The UI may show "pending index" until Mirror Node catches up.
 10. A submit key on an HCS topic restricts writers. The message bytes remain public. Publish commitments only.
-11. HBAR amounts in the SDK use 8 decimals. The demo stablecoin uses its own decimals and must not inherit Ethereum's 18.
-12. Public Hashio is for development only. Scripts accept `HEDERA_RPC_URL` and default to Hashio solely for local demo.
+11. HBAR amounts in the SDK use 8 decimals. The advance token uses its own decimals and must not inherit Ethereum's 18.
+12. Public Hashio is for development only. Scripts accept `HEDERA_RPC_URL` and default to Hashio solely for local development.
 13. `activate` reads the Chainlink USDC/USD feed. A missing, stale, or off-peg price reverts `PriceUnavailable` and rolls the funding batch back. The error returns no holder. Do not remove that call.
 
 ## State machine
