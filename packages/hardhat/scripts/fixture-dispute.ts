@@ -1,5 +1,5 @@
 import { Wallet } from "ethers";
-import { accountClient, operatorClient, readDemoAccounts, readManifest } from "./session.js";
+import { accountClient, operatorClient, readAccounts, readManifest } from "./session.js";
 import { STATE_CODE } from "@claimstate/sdk";
 import {
   activateCalldata,
@@ -15,7 +15,7 @@ await fixture();
 
 async function fixture(): Promise<void> {
   const manifest = await readManifest();
-  const accounts = await readDemoAccounts();
+  const accounts = await readAccounts();
   const operator = operatorClient();
   const factor = accountClient(accounts.factor);
   try {
