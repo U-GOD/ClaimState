@@ -13,7 +13,7 @@
       "name": "lint",
       "command": "npm run lint",
       "timeoutMs": 300000,
-      "purpose": "Typecheck the SDK, indexer, kernel scripts, and demo."
+      "purpose": "Typecheck the SDK, indexer, kernel scripts, and app."
     },
     {
       "name": "test",
@@ -25,13 +25,13 @@
       "name": "build",
       "command": "npm run build --workspace=@claimstate/nextjs",
       "timeoutMs": 600000,
-      "purpose": "Production build of the demo."
+      "purpose": "Production build of the app."
     },
     {
-      "name": "demo",
-      "command": "node scripts/smoke-demo.mjs",
+      "name": "app",
+      "command": "node scripts/smoke-app.mjs",
       "timeoutMs": 180000,
-      "purpose": "Open /demo and require the seven steps and ALREADY_RESERVED."
+      "purpose": "Open / and require the seven steps and ALREADY_RESERVED."
     },
     {
       "name": "copy",
