@@ -10,4 +10,4 @@ export {
   type IndexedEvidence,
   type ReadModel,
 } from "./read-model.js";
-export { DEMO_OBLIGATION_ID, DEMO_TOPIC_ID, demoStory, type DemoStep } from "./story.js";
+export { STORY_OBLIGATION_ID, STORY_TOPIC_ID, storySteps, type StoryStep } from "./story.js";
