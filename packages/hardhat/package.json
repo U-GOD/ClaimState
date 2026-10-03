@@ -8,7 +8,7 @@
     "test": "hardhat test",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network hederaTestnet",
     "smoke:acknowledge": "hardhat run scripts/smoke-acknowledge.ts --network hederaTestnet",
-    "demo:obligation": "hardhat run scripts/demo-obligation.ts --network hederaTestnet",
+    "obligation": "hardhat run scripts/run-obligation.ts --network hederaTestnet",
     "verify:mirror": "hardhat run scripts/verify-mirror.ts --network hederaTestnet",
     "verify:activation": "hardhat run scripts/verify-activation.ts --network hederaTestnet",
     "fixture:delinquency": "hardhat run scripts/fixture-delinquency.ts --network hederaTestnet",
