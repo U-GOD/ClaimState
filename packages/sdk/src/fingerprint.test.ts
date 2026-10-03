@@ -4,7 +4,7 @@ import { commercialFieldBytes, type FreightCommercialFields } from "./canonicali
 import { hmacFingerprintProvider } from "./fingerprint.js";
 import * as sdk from "./index.js";
 
-const demoFields: FreightCommercialFields = {
+const fields: FreightCommercialFields = {
   schemaVersion: 1,
   currency: "USD",
   amountCents: 1_850_000n,
@@ -18,7 +18,7 @@ const keyB = Uint8Array.from({ length: 32 }, () => 0x22);
 
 test("the same commercial fields and key always produce the same fingerprint", () => {
   const provider = hmacFingerprintProvider(keyA);
-  const bytes = commercialFieldBytes(demoFields);
+  const bytes = commercialFieldBytes(fields);
   const first = provider.fingerprint(bytes);
   const second = provider.fingerprint(bytes);
   assert.equal(first.length, 32);
@@ -27,23 +27,23 @@ test("the same commercial fields and key always produce the same fingerprint", (
 
 test("changing amount, due date, or debtor reference changes the fingerprint", () => {
   const provider = hmacFingerprintProvider(keyA);
-  const base = provider.fingerprint(commercialFieldBytes(demoFields));
+  const base = provider.fingerprint(commercialFieldBytes(fields));
   const changedAmount = provider.fingerprint(
-    commercialFieldBytes({ ...demoFields, amountCents: 1_800_000n }),
+    commercialFieldBytes({ ...fields, amountCents: 1_800_000n }),
   );
   const changedDue = provider.fingerprint(
-    commercialFieldBytes({ ...demoFields, dueDate: "2027-01-15" }),
+    commercialFieldBytes({ ...fields, dueDate: "2027-01-15" }),
   );
   const changedDebtor = provider.fingerprint(
-    commercialFieldBytes({ ...demoFields, debtorReference: "debtor-ref-2" }),
+    commercialFieldBytes({ ...fields, debtorReference: "debtor-ref-2" }),
   );
   assert.notDeepEqual(base, changedAmount);
   assert.notDeepEqual(base, changedDue);
   assert.notDeepEqual(base, changedDebtor);
 });
 
-test("two HMAC keys do not collide on the demo invoice", () => {
-  const bytes = commercialFieldBytes(demoFields);
+test("two HMAC keys do not collide on the freight invoice", () => {
+  const bytes = commercialFieldBytes(fields);
   const left = hmacFingerprintProvider(keyA).fingerprint(bytes);
   const right = hmacFingerprintProvider(keyB).fingerprint(bytes);
   assert.notDeepEqual(left, right);
