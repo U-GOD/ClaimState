@@ -11,7 +11,7 @@ export const repoRoot = path.resolve(packageRoot, "../..");
 export const manifestPath = path.join(packageRoot, "deployments", "hedera-testnet.json");
 export const activationReceiptPath = path.join(packageRoot, "deployments", "activation-receipt.json");
 export const lifecycleReceiptPath = path.join(packageRoot, "deployments", "lifecycle-receipt.json");
-export const demoAccountsPath = path.join(repoRoot, "data", "private", "demo-accounts.json");
+export const accountsPath = path.join(repoRoot, "data", "private", "accounts.json");
 
 export interface DeploymentManifest {
   network: "hedera-testnet";
@@ -31,18 +31,18 @@ export interface DeploymentManifest {
   chainlinkUsdcUsd: string;
 }
 
-export interface DemoAccount {
+export interface Account {
   accountId: string;
   evmAddress: string;
   privateKey: string;
 }
 
-export interface DemoAccounts {
+export interface Accounts {
   fingerprintKey: string;
   amountSalt: string;
-  factor: DemoAccount;
-  supplier: DemoAccount;
-  buyer: DemoAccount;
+  factor: Account;
+  supplier: Account;
+  buyer: Account;
 }
 
 export const HAPPY_PATH_STEPS = [
@@ -113,7 +113,7 @@ export function operatorClient(): Client {
   return client;
 }
 
-export function accountClient(account: DemoAccount): Client {
+export function accountClient(account: Account): Client {
   const client = Client.forTestnet();
   client.setOperator(account.accountId, PrivateKey.fromStringECDSA(account.privateKey));
   client.setDefaultMaxTransactionFee(new Hbar(20));
@@ -131,8 +131,8 @@ export async function readManifest(): Promise<DeploymentManifest> {
   return manifest;
 }
 
-export async function readDemoAccounts(): Promise<DemoAccounts> {
-  return JSON.parse(await readFile(demoAccountsPath, "utf8")) as DemoAccounts;
+export async function readAccounts(): Promise<Accounts> {
+  return JSON.parse(await readFile(accountsPath, "utf8")) as Accounts;
 }
 
 export async function writeJson(file: string, value: unknown): Promise<void> {
