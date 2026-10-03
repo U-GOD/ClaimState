@@ -24,8 +24,8 @@ validators:
   static: .harness/validators/static.json
   commands: .harness/validators/yarn.json
   # playwright-smoke.yaml is the Tier 2 route list. hedera-harness 1.2.2 detaches
-  # that server and never sees its URL on Windows, so the demo check runs as the
-  # "demo" command instead.
+  # that server and never sees its URL on Windows, so the app check runs as the
+  # "app" command instead.
 
 contract: .harness/acceptance-contract.json
 validator:
