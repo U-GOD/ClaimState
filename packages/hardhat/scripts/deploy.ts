@@ -13,15 +13,15 @@ import { Interface, Wallet } from "ethers";
 import { network } from "hardhat";
 import { TREASURY_SUPPLY_UNITS, TUSDC_DECIMALS, ADVANCE_TOKEN_UNITS } from "@claimstate/sdk";
 import {
-  demoAccountsPath,
+  accountsPath,
   manifestPath,
   mirrorBase,
   operatorClient,
   requireOperatorEnv,
   writeJson,
   delay,
-  type DemoAccount,
-  type DemoAccounts,
+  type Account,
+  type Accounts,
 } from "./session.js";
 
 const MIRROR_WAIT_MS = 90_000;
@@ -81,14 +81,14 @@ async function deploy(): Promise<void> {
     console.log(`contractId: ${contractId}`);
     console.log(`advanceUnits: ${ADVANCE_TOKEN_UNITS.toString()}`);
 
-    const accounts: DemoAccounts = {
+    const accounts: Accounts = {
       fingerprintKey: randomHex(32),
       amountSalt: randomHex(32),
       factor,
       supplier,
       buyer,
     };
-    await writeJson(demoAccountsPath, accounts);
+    await writeJson(accountsPath, accounts);
     await writeJson(manifestPath, {
       network: "hedera-testnet",
       chainId: 296,
@@ -152,7 +152,7 @@ async function ethCall(rpc: string, feed: Interface, name: "latestRoundData" | "
   return feed.decodeFunctionResult(name, body.result);
 }
 
-async function createAccount(client: Client, key: PrivateKey, hbar: number): Promise<DemoAccount> {
+async function createAccount(client: Client, key: PrivateKey, hbar: number): Promise<Account> {
   const response = await new AccountCreateTransaction()
     .setKey(key.publicKey)
     .setInitialBalance(new Hbar(hbar))
@@ -171,13 +171,13 @@ async function createAccount(client: Client, key: PrivateKey, hbar: number): Pro
 
 async function createToken(client: Client, treasury: string, treasuryKey: PrivateKey): Promise<string> {
   const transaction = await new TokenCreateTransaction()
-    .setTokenName("ClaimState Demo USD")
+    .setTokenName("ClaimState Advance")
     .setTokenSymbol("tUSDC")
     .setDecimals(TUSDC_DECIMALS)
     .setInitialSupply(TREASURY_SUPPLY_UNITS)
     .setTreasuryAccountId(treasury)
     .setSupplyKey(treasuryKey.publicKey)
-    .setTokenMemo("Demo advance. Not an assignment and not a lien.")
+    .setTokenMemo("Operational advance. Not an assignment and not a lien.")
     .setMaxTransactionFee(new Hbar(20))
     .freezeWith(client);
   await transaction.sign(treasuryKey);
