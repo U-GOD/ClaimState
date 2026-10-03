@@ -9,10 +9,10 @@ const dilutedTerms = `0x${"22".repeat(32)}`;
 const evidenceHash = `0x${"33".repeat(32)}`;
 const topicId = "0.0.0";
 
-export const DEMO_OBLIGATION_ID = obligationId;
-export const DEMO_TOPIC_ID = topicId;
+export const STORY_OBLIGATION_ID = obligationId;
+export const STORY_TOPIC_ID = topicId;
 
-export interface DemoStep {
+export interface StoryStep {
   id: string;
   title: string;
   proof: string;
@@ -21,7 +21,7 @@ export interface DemoStep {
   reservedError: string | null;
 }
 
-export function demoStory(): DemoStep[] {
+export function storySteps(): StoryStep[] {
   const created = message(1, "1700000000.000000000", {
     eventType: "Create",
     obligationId,
@@ -142,7 +142,7 @@ export function demoStory(): DemoStep[] {
   ];
 }
 
-export function assertPublicPayloadOmitsLocalFacts(steps: DemoStep[]): void {
+export function assertPublicPayloadOmitsLocalFacts(steps: StoryStep[]): void {
   const forbidden = Object.values(freightPolicy.localFacts);
   for (const step of steps) {
     if (step.publicMessage === null) {
