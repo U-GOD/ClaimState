@@ -19,7 +19,7 @@ import {
   type FreightPlan,
 } from "@claimstate/sdk";
 import { rawEcdsaKey } from "../operator-key.js";
-import { repoRoot, type DemoAccounts, type DeploymentManifest } from "./session.js";
+import { repoRoot, type Accounts, type DeploymentManifest } from "./session.js";
 import {
   publishHeader,
   readEnvelope,
@@ -60,7 +60,7 @@ export function operatorWallet(): Wallet {
 export async function creditNoteStep(input: {
   client: Client;
   manifest: DeploymentManifest;
-  accounts: DemoAccounts;
+  accounts: Accounts;
   opened: OpenedObligation;
   plan: FreightPlan;
   version: bigint;
@@ -179,7 +179,7 @@ export async function paymentStep(input: {
 export async function releaseStep(input: {
   client: Client;
   manifest: DeploymentManifest;
-  accounts: DemoAccounts;
+  accounts: Accounts;
   opened: OpenedObligation;
   version: bigint;
   termsRoot: string;
@@ -226,7 +226,7 @@ export async function releaseStep(input: {
 export async function openDisputeStep(input: {
   client: Client;
   manifest: DeploymentManifest;
-  accounts: DemoAccounts;
+  accounts: Accounts;
   opened: OpenedObligation;
   version: bigint;
   termsRoot: string;
@@ -239,7 +239,7 @@ export async function openDisputeStep(input: {
 export async function cureDisputeStep(input: {
   client: Client;
   manifest: DeploymentManifest;
-  accounts: DemoAccounts;
+  accounts: Accounts;
   opened: OpenedObligation;
   version: bigint;
   termsRoot: string;
