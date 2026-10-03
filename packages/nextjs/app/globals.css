@@ -1,101 +1,192 @@
+:root {
+  --ink: #1a1a1a;
+  --navy: #16324f;
+  --rule: #e2e2e2;
+  --quiet: #5c5c5c;
+}
+
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
-  color: #1a1a1a;
+  color: var(--ink);
   background: #fff;
 }
 
 a {
-  color: #16324f;
+  color: var(--navy);
 }
 
-header {
-  background: #16324f;
+.frame {
+  width: min(1040px, calc(100% - 3rem));
+  margin: 0 auto;
+}
+
+.bar {
+  background: var(--navy);
   color: #fff;
 }
 
-header a {
+.bar .frame {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.85rem 0;
+}
+
+.bar a {
   color: #fff;
   font-weight: 600;
   text-decoration: none;
 }
 
-header, main {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem;
+.bar span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.85rem;
+}
+
+main.frame {
+  flex: 1;
+  padding: 2rem 0 2.5rem;
 }
 
 h1 {
-  margin: 0.5rem 0 0.25rem;
-  font-size: 1.75rem;
+  margin: 0;
+  font-size: 1.65rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 h2 {
-  margin: 0 0 0.35rem;
+  margin: 0;
   font-size: 1.15rem;
   font-weight: 600;
 }
 
 h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #5c5c5c;
+  color: var(--quiet);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .lede,
-.meta {
-  color: #5c5c5c;
+.meta,
+.proof {
+  color: var(--quiet);
 }
 
 .lede {
-  margin-top: 0;
+  max-width: 40rem;
+  margin: 0.45rem 0 0;
 }
 
 .switch {
   display: flex;
   gap: 1.5rem;
-  margin: 1.25rem 0 0;
-  border-bottom: 1px solid #e2e2e2;
+  margin: 1.35rem 0 0;
+  border-bottom: 1px solid var(--rule);
 }
 
 .switch button {
   margin: 0 0 -1px;
-  padding: 0.4rem 0;
+  padding: 0.45rem 0;
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
-  color: #5c5c5c;
+  color: var(--quiet);
   font: inherit;
   cursor: pointer;
 }
 
 .switch button[aria-pressed="true"] {
-  color: #16324f;
-  border-bottom-color: #16324f;
+  color: var(--navy);
+  border-bottom-color: var(--navy);
+}
+
+.switch button:focus-visible {
+  outline: 1px solid var(--navy);
+  outline-offset: 3px;
 }
 
 .switch + p {
-  margin-top: 0.75rem;
+  margin: 0.8rem 0 0;
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
+  gap: 1.5rem 2rem;
+  margin: 1.25rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.identity dt {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.identity dd {
+  margin: 0.2rem 0 0;
+}
+
+.identity .meta {
+  margin: 0;
+}
+
+.mono {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
 section {
   margin: 0;
   padding: 1.5rem 0;
-  border-top: 1px solid #e2e2e2;
+  border-top: 1px solid var(--rule);
   background: transparent;
+}
+
+.proof {
+  margin: 0.25rem 0 1rem;
 }
 
 .columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1rem;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid var(--rule);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.notice {
+  margin: 0 0 0.75rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--navy);
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.seq {
+  margin: 0.85rem 0 0;
 }
 
 table {
@@ -105,22 +196,31 @@ table {
 
 th,
 td {
-  padding: 0.35rem 0.75rem 0.35rem 0;
+  padding: 0.4rem 0.75rem 0.4rem 0;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid var(--rule);
 }
 
 th {
-  width: 9rem;
-  color: #5c5c5c;
+  width: 8.5rem;
+  color: var(--quiet);
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 td {
   font-family: Consolas, "Courier New", monospace;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   overflow-wrap: anywhere;
+}
+
+.ledger {
+  margin-top: 1.5rem;
+}
+
+.back {
+  margin: 1.25rem 0 0;
 }
 
 ul {
@@ -138,8 +238,27 @@ code {
   overflow-wrap: anywhere;
 }
 
+footer {
+  border-top: 1px solid var(--rule);
+}
+
+footer .frame {
+  padding: 1rem 0 1.25rem;
+}
+
+footer p {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 720px) {
-  .columns {
+  .frame {
+    width: min(1040px, calc(100% - 2rem));
+  }
+
+  .columns,
+  .identity {
     grid-template-columns: 1fr;
   }
 }
