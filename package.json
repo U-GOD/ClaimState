@@ -23,10 +23,12 @@
     "verify:mirror": "npm run verify:mirror --workspace=@claimstate/hardhat",
     "verify:activation": "npm run verify:activation --workspace=@claimstate/hardhat",
     "fixture:delinquency": "npm run fixture:delinquency --workspace=@claimstate/hardhat",
-    "fixture:dispute": "npm run fixture:dispute --workspace=@claimstate/hardhat"
+    "fixture:dispute": "npm run fixture:dispute --workspace=@claimstate/hardhat",
+    "format": "node -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@hiero-ledger/sdk": "2.88.0"
+    "@hiero-ledger/sdk": "2.88.0",
+    "protobufjs": "8.0.1"
   },
   "devDependencies": {
     "hedera-harness": "1.2.2",
