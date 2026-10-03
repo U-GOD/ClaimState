@@ -31,7 +31,7 @@ import {
   type ActivationBatch,
   type ClaimEvent,
 } from "@claimstate/sdk";
-import { mirrorBase, requireOperatorEnv, type DemoAccounts, type DeploymentManifest } from "./session.js";
+import { mirrorBase, requireOperatorEnv, type Accounts, type DeploymentManifest } from "./session.js";
 
 const FACE_AMOUNT_CENTS = 1_850_000n;
 const DUE_DATE = "2026-12-31";
@@ -73,7 +73,7 @@ export interface OpenedObligation {
 export async function openAcknowledged(
   client: Client,
   manifest: DeploymentManifest,
-  accounts: DemoAccounts,
+  accounts: Accounts,
   reference: string,
   options?: { dueDate?: string; dueUnix?: bigint; publishEvidence?: boolean },
 ): Promise<OpenedObligation> {
