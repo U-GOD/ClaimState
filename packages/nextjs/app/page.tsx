@@ -49,11 +49,14 @@ export default function HomePage() {
         const header =
           step.publicMessage === null ? null : presentHeader(decodeEvidenceHeader(step.publicMessage.message));
         return (
-          <section key={step.id} id={step.id}>
-            <h2>
-              {index + 1}. {step.title}
-            </h2>
-            <p className="proof">{step.proof}</p>
+          <section className="step" key={step.id} id={step.id}>
+            <div className="step-head">
+              <span className="step-no">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h2>{step.title}</h2>
+                <p className="proof">{step.proof}</p>
+              </div>
+            </div>
             <div className="columns">
               <div className="panel">
                 <h3>Local store</h3>
