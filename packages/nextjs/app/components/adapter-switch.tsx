@@ -28,7 +28,7 @@ export function AdapterSwitch() {
           Compute SLA
         </button>
       </div>
-      <p>
+      <p className="caption">
         {selected.instrument}. {selected.supplier} and {selected.buyer}. Same kernel.
       </p>
       {adapter === "compute" ? <p>{compute.note}</p> : null}
