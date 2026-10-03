@@ -102,7 +102,7 @@ export function storySteps(): StoryStep[] {
     {
       id: "factor-funds",
       title: "Factor funds 85 percent",
-      proof: "One batch: contract, HCS, tUSDC",
+      proof: "One batch: evidence, advance, receipt, contract last",
       localFacts: [freightPolicy.localFacts.advance],
       publicMessage: activated,
       reservedError: null,
