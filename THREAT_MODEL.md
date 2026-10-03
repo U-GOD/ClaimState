@@ -14,7 +14,7 @@ Every accepted event stores its event id. A second submission of that id reverts
 
 ## Batch rollback fees
 
-Activation is one HIP-551 batch: `activate`, the evidence header, and the `tUSDC` advance, under the same batch key. If any inner transaction fails, the reservation and the token transfer both roll back. The builder refuses to return a batch whose outer size exceeds 6,000 bytes rather than dropping the contract call or the disbursement.
+Activation is one HIP-551 batch: the evidence header, the `tUSDC` advance, the receipt mint, then `activate` last, under the same batch key. Hedera accepts one contract call in a batch, and only in the final position. If any inner transaction fails, the reservation, the token transfer, and the receipt mint roll back. The builder refuses to return a batch whose outer size exceeds 6,000 bytes rather than dropping an inner transaction.
 
 Hedera can still charge fees for inner transactions that were processed before the batch failed. A reverted batch is not free. `verify-activation.ts` prints the charged fee on the crafted inner failure. That fee is not a partial reservation and not a partial advance.
 
