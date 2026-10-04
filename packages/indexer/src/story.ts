@@ -19,6 +19,7 @@ export interface StoryStep {
   localFacts: readonly string[];
   publicMessage: ConsensusEvidence | null;
   reservedError: string | null;
+  liveProof?: { href: string; label: string };
 }
 
 export function storySteps(): StoryStep[] {
@@ -110,10 +111,14 @@ export function storySteps(): StoryStep[] {
     {
       id: "second-factor",
       title: "Second factor",
-      proof: "ALREADY_RESERVED, holder not shown",
+      proof: "Contract error AlreadyReserved(). No eighth topic message",
       localFacts: [],
       publicMessage: null,
       reservedError: "ALREADY_RESERVED",
+      liveProof: {
+        href: "https://hashscan.io/testnet/transaction/0.0.10835610-1790995730-481411216",
+        label: "Failed second funding batch",
+      },
     },
     {
       id: "short-pay",
