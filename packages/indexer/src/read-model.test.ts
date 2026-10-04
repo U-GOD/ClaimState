@@ -54,6 +54,10 @@ test("the scripted story has seven steps and hides local facts", () => {
   assert.equal(steps.length, 7);
   assert.equal(steps[3]?.reservedError, "ALREADY_RESERVED");
   assert.equal(steps[3]?.publicMessage, null);
+  assert.equal(
+    steps[3]?.liveProof?.href,
+    "https://hashscan.io/testnet/transaction/0.0.10835610-1790995730-481411216",
+  );
   assertPublicPayloadOmitsLocalFacts(steps);
   const credit = steps[4]?.publicMessage;
   if (credit === null || credit === undefined) {
