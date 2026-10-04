@@ -40,7 +40,7 @@ ClaimState introduces two foundational primitives:
 
 1. **Obligation state envelope**: A versioned cryptographic container for commercial terms, participant roles, and signed lifecycle events. Instead of posting raw invoices or customer data on a public ledger, parties sign state transitions off-chain. Hedera stores Merkle roots and blind commitments, preserving business confidentiality while providing an immutable audit trail.
 
-2. **Operational reservation**: A single, protected financing slot on that envelope. When a financier funds an invoice, their reservation lock and the digital payout occur together in a single atomic transaction batch. If a second financier attempts to fund the same invoice, the network rejects the transaction with `ALREADY_RESERVED` without leaking who holds the existing reservation.
+2. **Operational reservation**: A single, protected financing slot on that envelope. When a financier funds an invoice, their reservation lock and the digital payout occur together in a single atomic transaction batch. If a second financier attempts to fund the same invoice, `activate` reverts `AlreadyReserved()` and the error returns no holder. The local page labels that card `ALREADY_RESERVED`.
 
 The state envelope coordinates workflow and evidence among participants. Legal priority, perfection of liens, and UCC filings still depend on governing law and formal notices; those steps are handled by external adapters rather than smart contract state alone.
 
@@ -85,7 +85,45 @@ The complete obligation lifecycle has been deployed and verified on the Hedera t
 | Operational receipt NFT | `0.0.10835619` | [View token](https://hashscan.io/testnet/token/0.0.10835619) |
 | Chainlink USDC/USD feed | `0.0.4873353` | [View contract](https://hashscan.io/testnet/contract/0.0.4873353) |
 
-In the end-to-end run, the obligation reached `RELEASED` at version 7. Mirror Node has all seven topic sequences. The supplier advance balance is 1,572,500 units ($15,725.00). The advance token is named ClaimState Advance.
+In the end-to-end run, the obligation reached `RELEASED` at version 7. The supplier advance balance is 1,572,500 units ($15,725.00). The advance token is named ClaimState Advance.
+
+### The seven topic messages
+
+[Topic 0.0.10835617](https://hashscan.io/testnet/topic/0.0.10835617) has seven messages because seven events were accepted. They are not seven steps of one HIP-551 batch. Only sequence 3 is a message inside the funding batch. The transfer, the receipt mint, and the contract call are the other inners of that batch, and they do not create topic messages.
+
+HashScan prints each body as scrambled characters. The body is 129 binary bytes. The same bytes are in `packages/hardhat/deployments/lifecycle-receipt.json`, and Mirror returns them at `https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10835617/messages/{sequence}`. Byte 1 is the event code. Byte 43 is the new state. Bytes 109 through 128 are the holder, and they are 20 zero bytes on every message.
+
+| Seq | Event | Version | Transition | Signer role | Inside the funding batch? |
+|---|---|---|---|---|---|
+| 1 | Create | 1 | empty to `DRAFT` | supplier | No. Its own transaction. |
+| 2 | Acknowledge | 2 | `DRAFT` to `ACKNOWLEDGED` | buyer | No. |
+| 3 | Activate | 3 | `ACKNOWLEDGED` to `RESERVED` | factor | Yes. This is the batch's HCS inner. |
+| 4 | CreditNote | 4 | `RESERVED` to `RESERVED` | buyer | No. The terms root changes. The id does not. |
+| 5 | AllocatePayment | 5 | `RESERVED` to `RESERVED` | payment agent | No. The $500 short-pay report. It does not settle. |
+| 6 | AllocatePayment | 6 | `RESERVED` to `SETTLED` | payment agent | No. The collection. This one settles. |
+| 7 | Release | 7 | `SETTLED` to `RELEASED` | factor | No. |
+
+### The funding batch, which is sequence 3
+
+One outer transaction, [`0.0.10835610-1790995710-643016819`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995710-643016819), result `SUCCESS`. Parent consensus timestamp `1790995717.109878104`. The inners, in order:
+
+1. `CONSENSUSSUBMITMESSAGE` to topic `0.0.10835617`. That commit is sequence 3.
+2. `CRYPTOTRANSFER` of 1,572,500 units of token `0.0.10835618`, from factor `0.0.10835610` to supplier `0.0.10835612`.
+3. `TOKENMINT` of receipt `0.0.10835619`, serial 1.
+4. `CONTRACTCALL` `activate` on `0.0.10835620`. This inner is last.
+
+### The second funding attempt
+
+After release, the same factor submitted a second HIP-551 batch with a new `activate`. That batch is [`0.0.10835610-1790995730-481411216`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995730-481411216). The outer result is `INNER_TRANSACTION_FAILED`.
+
+| Inner | Result |
+|---|---|
+| HCS submit | `REVERTED_SUCCESS`. The topic did not gain a sequence 8. |
+| Token transfer | `REVERTED_SUCCESS`. The supplier balance stayed 1,572,500. |
+| Receipt mint | `REVERTED_SUCCESS`. No second serial. |
+| `activate` | `CONTRACT_REVERT_EXECUTED`. Revert data `0x87b34a06`, the selector of `AlreadyReserved()`. The error has no arguments, so the holder is not in the revert. |
+
+The local page card **Second factor** shows `ALREADY_RESERVED` and "Holder not shown." That label is this same revert. The card links the failed batch.
 
 > **Legal notice:** Holding the advance token, an HTS operational receipt, or an HCS topic message does not constitute an assignment of receivables, a perfected lien under commercial law, or UCC Article 12 controllable electronic record control. See [LEGAL_BOUNDARIES.md](LEGAL_BOUNDARIES.md) for detailed regulatory guidance.
 
@@ -190,7 +228,7 @@ stateDiagram-v2
   DEFAULTED --> [*]
 ```
 
-Attempting to call `Activate` from any state other than `ACKNOWLEDGED`, or while an active reservation holder already exists, reverts with `ALREADY_RESERVED`. To preserve confidentiality, the revert does not return the identity of the current holder.
+Calling `activate` from any state other than `ACKNOWLEDGED`, or while a holder is already set, reverts `AlreadyReserved()`. The error has no arguments, so it does not return the current holder. The published second attempt is the failed batch in [The second funding attempt](#the-second-funding-attempt).
 
 | State | Meaning |
 |---|---|
@@ -213,7 +251,7 @@ Private commercial records remain in the gitignored `data/private/` folder. On t
 | 2 | Buyer | `ACKNOWLEDGED`. Terms root signed. |
 | 3 | Fingerprint adapter | Signed duplicate-check committed as a hash. |
 | 4 | Supplier + factor | Atomic batch: `RESERVED`, HCS header, tUSDC advance, receipt mint. |
-| 5 | Second factor | Rejected: `ALREADY_RESERVED`. Holder identity not disclosed. |
+| 5 | Second factor | Not a topic message. A later batch reverts `AlreadyReserved()` and writes no sequence 8. |
 | 6 | Buyer + supplier | Credit note. Version and terms root updated while state stays `RESERVED`. |
 | 7 | Payment agent, then factor | `SETTLED`, followed by `RELEASED`. |
 
