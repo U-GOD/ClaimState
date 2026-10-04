@@ -70,9 +70,14 @@ export default function HomePage() {
               <div className="panel">
                 <h3>Public header</h3>
                 {step.reservedError !== null ? (
-                  <p className="notice">
-                    {step.reservedError}. Holder not shown.
-                  </p>
+                  <>
+                    <p className="notice">
+                      {step.reservedError}. Holder not shown.
+                    </p>
+                    <p>
+                      The contract revert is <span className="mono">AlreadyReserved()</span>. It returns no address.
+                    </p>
+                  </>
                 ) : null}
                 {header === null ? null : (
                   <table>
@@ -91,6 +96,11 @@ export default function HomePage() {
                     <a href={hashScanTopicUrl(step.publicMessage.topicId)}>
                       Topic sequence {step.publicMessage.sequenceNumber}
                     </a>
+                  </p>
+                )}
+                {step.liveProof === undefined ? null : (
+                  <p className="seq">
+                    <a href={step.liveProof.href}>{step.liveProof.label}</a>
                   </p>
                 )}
               </div>
