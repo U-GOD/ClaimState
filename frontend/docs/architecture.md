@@ -48,6 +48,8 @@ Funding is one [HIP-551](https://github.com/hiero-ledger/hiero-improvement-propo
 3. Token mint: one operational receipt NFT. Metadata says `operational-receipt-not-title`.
 4. Contract call: `activate`. This reads the Chainlink USDC/USD feed. A missing, stale, or off-peg price reverts `PriceUnavailable` and rolls the whole batch back. The error returns no holder.
 
+On the published testnet run, this batch is topic sequence 3, transaction [`0.0.10835610-1790995710-643016819`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995710-643016819). A later batch from the same factor, [`0.0.10835610-1790995730-481411216`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995730-481411216), reverted `AlreadyReserved()` and did not add an eighth message. The other six topic messages are lifecycle events outside this batch. The map is in [Quickstart](quickstart.md).
+
 The outer batch must stay within 6,000 bytes. If it does not fit, the builder throws and does not drop an inner transaction. A delinquency schedule is a later transaction. It is not a fifth inner of this batch. Hedera cannot make an ACH payment atomic with the reservation. A bank payment is a later signed `AllocatePayment`.
 
 Contract calls inside batches are scheduled for removal in March 2027. The batch shape is documented so a later change is deliberate.
