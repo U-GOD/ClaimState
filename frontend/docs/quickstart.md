@@ -58,7 +58,31 @@ The published run already on testnet:
 | Operational receipt | `0.0.10835619` | https://hashscan.io/testnet/token/0.0.10835619 |
 | Chainlink USDC/USD | `0.0.4873353` | https://hashscan.io/testnet/contract/0.0.4873353 |
 
-That obligation reached `RELEASED` at version 7. The topic has seven messages. The supplier balance is 1,572,500 token units, which displays as $15,725.00. The advance token is named ClaimState Advance. Its memo says it is an operational advance, not an assignment and not a lien.
+That obligation reached `RELEASED` at version 7. The supplier balance is 1,572,500 token units, which displays as $15,725.00. The advance token is named ClaimState Advance. Its memo says it is an operational advance, not an assignment and not a lien.
+
+## How the seven messages map
+
+The topic has seven messages because seven events were accepted. They are not seven steps of one HIP-551 batch. Only sequence 3 is a message inside the funding batch. The transfer, the receipt mint, and `activate` are the other inners, and they do not create topic messages.
+
+HashScan shows the body as scrambled characters. It is 129 binary bytes. Mirror returns the same bytes at `https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10835617/messages/{sequence}`.
+
+| Seq | Event | Version | Transition | Inside the funding batch? |
+|---|---|---|---|---|
+| 1 | Create | 1 | empty to `DRAFT` | No |
+| 2 | Acknowledge | 2 | `DRAFT` to `ACKNOWLEDGED` | No |
+| 3 | Activate | 3 | `ACKNOWLEDGED` to `RESERVED` | Yes. The batch's HCS inner. |
+| 4 | CreditNote | 4 | `RESERVED` to `RESERVED` | No. Terms change. The id does not. |
+| 5 | AllocatePayment | 5 | `RESERVED` to `RESERVED` | No. The $500 short-pay report. It does not settle. |
+| 6 | AllocatePayment | 6 | `RESERVED` to `SETTLED` | No. The collection. This one settles. |
+| 7 | Release | 7 | `SETTLED` to `RELEASED` | No |
+
+The successful batch is [`0.0.10835610-1790995710-643016819`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995710-643016819). Its inners, in order, are the sequence 3 topic message, the 1,572,500 unit transfer, receipt serial 1, and `activate` last.
+
+## The second funding attempt
+
+After release, the same factor submitted another batch. It is [`0.0.10835610-1790995730-481411216`](https://hashscan.io/testnet/transaction/0.0.10835610-1790995730-481411216). The outer result is `INNER_TRANSACTION_FAILED`. The HCS inner, the transfer, and the mint are `REVERTED_SUCCESS`, so there is no sequence 8 and the supplier balance stayed 1,572,500. The contract inner is `CONTRACT_REVERT_EXECUTED`. The revert data is `0x87b34a06`, the selector of `AlreadyReserved()`. That error has no arguments, so the holder is not returned.
+
+The local card **Second factor** shows `ALREADY_RESERVED` and "Holder not shown." That label is this revert, and the card links the failed batch.
 
 The local website does not read topic `0.0.10835617`. It shows the guided example on topic `0.0.0`. Use HashScan for the live messages. On HashScan the message body looks scrambled because it is a binary header. The page decodes that same kind of header into version, state, and hashes.
 
