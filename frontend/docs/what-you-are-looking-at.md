@@ -36,12 +36,12 @@ The topic links on the cards point at `0.0.0`. The live testnet run is a differe
 | Same private invoice offered twice | The bill exists. Offering it twice does not publish a second document. | `DRAFT`, version 1 |
 | Broker confirms | The broker agrees the terms. The PDF stays local. | `ACKNOWLEDGED` |
 | Factor funds 85 percent | One lender pays the advance. Evidence, payment, receipt, and the contract succeed together, or the whole batch rolls back. | `RESERVED` |
-| Second factor | Another lender tries the same bill and is refused. The holder is not named. | `ALREADY_RESERVED`. Holder not shown. |
+| Second factor | Another lender tries the same bill and is refused. The holder is not named. | `ALREADY_RESERVED`. Holder not shown. The contract error is `AlreadyReserved()`, and the card links the failed testnet batch. |
 | $500 short-pay | The amount owed changes. The obligation id stays the same. | Still `RESERVED`, new version and terms root |
 | Collection report and release | The bill is collected and the lender lets go. | `RELEASED`, version 7 |
 | Switch to Compute SLA | The same kernel can describe a different contract. Click **Compute SLA** and the sentence under the control changes. The seven cards stay the freight example. | A separate acknowledged envelope |
 
-The gray line under **Factor funds 85 percent** names the real batch order: evidence, advance, receipt, then the contract last.
+The gray line under **Factor funds 85 percent** names the real batch order: evidence, advance, receipt, then the contract last. These seven cards are the tour. The seven messages on the live topic are a different list: one message per accepted event, and only the Activate message is inside the funding batch. That map is in [Quickstart](quickstart.md).
 
 ## What a company would do
 
